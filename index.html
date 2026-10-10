@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+ <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+ <title>Football Pitch</title>
+ <style>
+  * {
+   box-sizing: border-box;
+  }
+
+  body {
+   margin: 0;
+   min-height: 100vh;
+   display: grid;
+   place-items: center;
+   background: #183f12;
+  }
+
+  .pitch-container {
+   width: min(100%, 1200px);
+   aspect-ratio: 105 / 68;
+  }
+
+  canvas {
+   display: block;
+   width: 100%;
+   height: 100%;
+  }
+ </style>
+</head>
+<body>
+ <div class="pitch-container">
+  <canvas id="pitch"></canvas>
+ </div>
+
+ <script>
+  const canvas = document.getElementById("pitch");
+  const ctx = canvas.getContext("2d");
+
+  const W = 1050;
+  const H = 680;
+
+  const field = {
+   x: 25,
+   y: 16.19,
+   w: 1000,
+   h: 647.62
+  };
+
+  const white = "#f7f8ef";
+
+  function line(x1, y1, x2, y2, width = 4) {
+   ctx.beginPath();
+   ctx.moveTo(x1, y1);
+   ctx.lineTo(x2, y2);
+   ctx.lineWidth = width;
+   ctx.strokeStyle = white;
+   ctx.lineCap = "round";
+   ctx.lineJoin = "round";
+   ctx.stroke();
+  }
+
+  function circle(x, y, radius, fill = false, width = 4, fillStyle = white) {
+   ctx.beginPath();
+   ctx.arc(x, y, radius, 0, Math.PI * 2);
+
+   if (fill) {
+    ctx.fillStyle = fillStyle;
+    ctx.fill();
+   } else {
+    ctx.lineWidth = width;
+    ctx.strokeStyle = white;
+    ctx.stroke();
+   }
+  }
+
+  function rectangle(x, y, w, h, width = 4) {
+   ctx.lineWidth = width;
+   ctx.strokeStyle = white;
+   ctx.strokeRect(x, y, w, h);
+  }
+
+  function cornerArc(x, y, radius, start, end) {
+   ctx.beginPath();
+   ctx.arc(x, y, radius, start, end);
+   ctx.lineWidth = 3;
+   ctx.strokeStyle = white;
+   ctx.stroke();
+  }
+
+  function drawGoal(x, y, width, height) {
+   ctx.fillStyle = "rgba(255,255,255,0.10)";
+   ctx.fillRect(x, y, width, height);
+   rectangle(x, y, width, height, 3);
+
+   // Net mesh
+   ctx.save();
+   ctx.beginPath();
+   ctx.rect(x, y, width, height);
+   ctx.clip();
+
+   ctx.strokeStyle = "rgba(255,255,255,0.55)";
+   ctx.lineWidth = 1;
+
+   const spacingX = width / 5;
+   const spacingY = height / 8;
+
+   for (let i = 1; i < 5; i++) {
+    lineNet(x + i * spacingX, y, x + i * spacingX, y + height);
+   }
+
+   for (let i = 1; i < 8; i++) {
+    lineNet(x, y + i * spacingY, x + width, y + i * spacingY);
+   }
+
+   ctx.restore();
+  }
+
+  function lineNet(x1, y1, x2, y2) {
+   ctx.beginPath();
+   ctx.moveTo(x1, y1);
+   ctx.lineTo(x2, y2);
+   ctx.stroke();
+  }
+
+  function drawPitch() {
+   const { x, y, w, h } = field;
+   const midX = x + w / 2;
+   const midY = y + h / 2;
+
+   // Standard pitch dimensions, scaled to the canvas.
+   const penaltyDepth = w * 16.5 / 105;
+   const penaltyHeight = h * 40.3 / 68;
+   const goalAreaDepth = w * 5.5 / 105;
+   const goalAreaHeight = h * 18.32 / 68;
+   const penaltySpotOffset = w * 11 / 105;
+   const centerRadius = w * 9.15 / 105;
+   const cornerRadius = w / 105;
+   const goalWidth = w * 7.32 / 105;
+   const goalDepth = x;
+
+   // Grass background
+   ctx.fillStyle = "#28651a";
+   ctx.fillRect(0, 0, W, H);
+
+   // Alternating grass stripes
+   const stripeWidth = w / 10;
+
+   for (let i = 0; i < 10; i++) {
+    ctx.fillStyle = i % 2 === 0 ? "#388522" : "#31801e";
+    ctx.fillRect(
+     x + i * stripeWidth,
+     y,
+     stripeWidth,
+     h
+    );
+   }
+
+   // Subtle shading
+   ctx.fillStyle = "rgba(0,0,0,0.035)";
+   ctx.fillRect(x, y, w, h);
+
+   // Outer boundary
+   rectangle(x, y, w, h);
+
+   // Halfway line
+   line(midX, y, midX, y + h);
+
+   // Center circle and spot
+   circle(midX, midY, centerRadius);
+   circle(midX, midY, 4, true);
+
+   // Penalty areas
+   rectangle(
+    x,
+    midY - penaltyHeight / 2,
+    penaltyDepth,
+    penaltyHeight
+   );
+
+   rectangle(
+    x + w - penaltyDepth,
+    midY - penaltyHeight / 2,
+    penaltyDepth,
+    penaltyHeight
+   );
+
+   // Goal areas
+   rectangle(
+    x,
+    midY - goalAreaHeight / 2,
+    goalAreaDepth,
+    goalAreaHeight
+   );
+
+   rectangle(
+    x + w - goalAreaDepth,
+    midY - goalAreaHeight / 2,
+    goalAreaDepth,
+    goalAreaHeight
+   );
+
+   // Penalty spots
+   const leftSpotX = x + penaltySpotOffset;
+   const rightSpotX = x + w - penaltySpotOffset;
+
+   circle(leftSpotX, midY, 4, true);
+   circle(rightSpotX, midY, 4, true);
+
+   // Penalty arcs: show only the curved section outside each box.
+   const arcAngle = Math.acos(
+    (penaltyDepth - penaltySpotOffset) / centerRadius
+   );
+
+   ctx.beginPath();
+   ctx.arc(
+    leftSpotX,
+    midY,
+    centerRadius,
+    -arcAngle,
+    arcAngle
+   );
+   ctx.lineWidth = 4;
+   ctx.strokeStyle = white;
+   ctx.stroke();
+
+   ctx.beginPath();
+   ctx.arc(
+    rightSpotX,
+    midY,
+    centerRadius,
+    Math.PI - arcAngle,
+    Math.PI + arcAngle
+   );
+   ctx.lineWidth = 4;
+   ctx.strokeStyle = white;
+   ctx.stroke();
+
+   // Corner arcs
+   cornerArc(x, y, cornerRadius, 0, Math.PI / 2);
+   cornerArc(x + w, y, cornerRadius, Math.PI / 2, Math.PI);
+   cornerArc(
+    x + w,
+    y + h,
+    cornerRadius,
+    Math.PI,
+    Math.PI * 1.5
+   );
+   cornerArc(
+    x,
+    y + h,
+    cornerRadius,
+    Math.PI * 1.5,
+    Math.PI * 2
+   );
+
+   // Goals and netting
+   drawGoal(
+    0,
+    midY - goalWidth / 2,
+    goalDepth,
+    goalWidth
+   );
+
+   drawGoal(
+    x + w,
+    midY - goalWidth / 2,
+    goalDepth,
+    goalWidth
+   );
+  }
+
+  const players = [
+    { x: 30, y: 34, team: "home" },
+    { x: 50, y: 20, team: "home", hasBall: true  },
+    { x: 60, y: 70, team: "home" },
+    { x: 72, y: 50, team: "away" },
+    { x: 70, y: 34, team: "away" },
+    { x: 70, y: 64, team: "away" }
+  ];
+
+
+  function drawPlayers() {
+   // Example player positions
+
+
+   players.forEach(player => {
+    const px = field.x + (player.x / 100) * field.w;
+    const py = field.y + (player.y / 100) * field.h;
+    const color = player.team === "home" ? "#2735F5" : "#DC9450";
+    circle(px, py, 10, true, 4, color);
+   });
+  }
+
+  function drawBall(playerWithBall) {
+   // Example ball position
+   // if player with adjust ball next to player, otherwise place ball in center of pitch  
+   const ball = playerWithBall ? { x: playerWithBall.x + 1, y: playerWithBall.y } : { x: 52, y: 34 }; // Center of the pitch
+
+   const bx = field.x + (ball.x / 100) * field.w;
+   const by = field.y + (ball.y / 100) * field.h;
+     // draw ball look more like ball with white and black color not just one color
+   circle(bx, by, 5, true, 2, "#fff");
+                  
+
+
+   
+  }
+
+  function drawPassTrajectory(playerFrom, playerTo) {
+   const fromX = field.x + ((playerFrom.x + 1) / 100) * field.w;
+   const fromY = field.y + (playerFrom.y / 100) * field.h;
+   const toX = field.x + (playerTo.x / 100) * field.w;
+   const toY = field.y + (playerTo.y / 100) * field.h;
+
+   // add check if trajectory intersects with other team player, then draw trajectory in red color to indicate interception, otherwise draw in white color
+   const intersects = players.some(player => {
+    if (player.team !== playerFrom.team) {
+     const playerX = field.x + (player.x / 100) * field.w;
+     const playerY = field.y + (player.y / 100) * field.h;
+     const distance = Math.abs((toY - fromY) * playerX - (toX - fromX) * playerY + toX * fromY - toY * fromX) / Math.sqrt(Math.pow(toY - fromY, 2) + Math.pow(toX - fromX, 2));
+     return distance < 10; // 10 pixels threshold for interception
+    }
+    return false;
+   });
+  
+
+   ctx.beginPath();
+   ctx.moveTo(fromX, fromY);
+   ctx.lineTo(toX, toY);
+   ctx.lineWidth = 2;
+   ctx.strokeStyle = intersects ? "rgba(255, 0, 0, 0.7)" : "rgba(255, 255, 255, 0.7)";
+   ctx.setLineDash([5, 5]); // Dashed line
+   ctx.stroke();
+   ctx.setLineDash([]); // Reset line dash
+  }
+
+  function drawPassTrajectoriesWithOwnTeam(teamPlayers) {
+    // pass should always come from the player with the ball, so we need to find that player first
+    const playerWithBall = teamPlayers.find(player => player.hasBall);
+    if (!playerWithBall) return; // No player with the ball, so no passes 
+
+   for (let i = 0; i < teamPlayers.length; i++) {
+    for (let j = i + 1; j < teamPlayers.length; j++) {
+      if (teamPlayers[i] === playerWithBall) {
+        drawPassTrajectory(teamPlayers[i], teamPlayers[j]);
+      } else if (teamPlayers[j] === playerWithBall) {
+        drawPassTrajectory(teamPlayers[j], teamPlayers[i]);
+      }
+    }
+   }
+  }
+
+  function resizeCanvas() {
+   const rect = canvas.getBoundingClientRect();
+   const dpr = window.devicePixelRatio || 1;
+
+   canvas.width = Math.round(rect.width * dpr);
+   canvas.height = Math.round(rect.height * dpr);
+
+   ctx.setTransform(
+    canvas.width / W, 0,
+    0, canvas.height / H,
+    0, 0
+   );
+
+   drawPitch();
+   // draw players, ball, etc. here if needed
+    drawPlayers();
+    const playerWithBall = players.find(player => player.hasBall);
+    players.forEach(player => {
+      if (player.hasBall) {
+        drawBall(player);
+      }
+    });
+    // draw pass trajectories for the team with the ball
+    drawPassTrajectoriesWithOwnTeam(players.filter(p => p.team === playerWithBall.team));
+  }
+
+  const observer = new ResizeObserver(resizeCanvas);
+  observer.observe(canvas.parentElement);
+  resizeCanvas();
+
+
+  // add event listener to the canvas to detect click on a player and then set that player as the one with the ball, and redraw the pitch with the new player with the ball
+  canvas.addEventListener("click", (event) => {
+    const rect = canvas.getBoundingClientRect();
+    const clickX = (event.clientX - rect.left) / rect.width * W;
+    const clickY = (event.clientY - rect.top) / rect.height * H;
+    // add check if player was dragged, if so then don't set that player as the one with the ball
+    if (hasbeenDragged) {
+      hasbeenDragged = false; // reset the flag for the next click
+      return;
+    }
+  
+    players.forEach(player => {
+      const px = field.x + (player.x / 100) * field.w;
+      const py = field.y + (player.y / 100) * field.h;
+      const distance = Math.sqrt(Math.pow(clickX - px, 2) + Math.pow(clickY - py, 2));
+      if (distance < 10) { // 10 pixels threshold for player click
+        players.forEach(p => p.hasBall = false); // reset all players
+        player.hasBall = true; // set clicked player as the one with the ball
+        resizeCanvas(); // redraw the pitch with the new player with the ball
+      }
+    });
+  });
+    
+  
+  // add event listner to the canvas to detect drag and drop of a player, and update the player's position accordingly, and redraw the pitch with the new player position
+  let draggedPlayer = null;
+  let hasbeenDragged = false;
+  canvas.addEventListener("mousedown", (event) => {
+    const rect = canvas.getBoundingClientRect();
+    const clickX = (event.clientX - rect.left) / rect.width * W;
+    const clickY = (event.clientY - rect.top) / rect.height * H;
+    players.forEach(player => {
+      const px = field.x + (player.x / 100) * field.w;
+      const py = field.y + (player.y / 100) * field.h;
+      const distance = Math.sqrt(Math.pow(clickX - px, 2) + Math.pow(clickY - py, 2));
+      if (distance < 10) { // 10 pixels threshold for player click
+        draggedPlayer = player;
+      }
+    });
+  });
+
+  // add event listener to the canvas to detect mouse move, and update the dragged player's position accordingly, and redraw the pitch with the new player position
+  canvas.addEventListener("mousemove", (event) => {
+    if (draggedPlayer) {
+      hasbeenDragged = true;
+      const rect = canvas.getBoundingClientRect();
+      const moveX = (event.clientX - rect.left) / rect.width * W;
+      const moveY = (event.clientY - rect.top) / rect.height * H;
+      draggedPlayer.x = ((moveX - field.x) / field.w) * 100;
+      draggedPlayer.y = ((moveY - field.y) / field.h) * 100;
+      resizeCanvas(); // redraw the pitch with the new player position
+    }
+  });
+
+  // add event listener to the canvas to detect mouse up, and reset the dragged player
+  canvas.addEventListener("mouseup", (event) => {
+    draggedPlayer = null;
+  });
+
+  // does not work on mobile, need to add touch event listeners for drag and drop of players
+  canvas.addEventListener("touchstart", (event) => {
+    const rect = canvas.getBoundingClientRect();
+    const touchX = (event.touches[0].clientX - rect.left) / rect.width * W;
+    const touchY = (event.touches[0].clientY - rect.top) / rect.height * H;
+    players.forEach(player => {
+      const px = field.x + (player.x / 100) * field.w;
+      const py = field.y + (player.y / 100) * field.h;
+      const distance = Math.sqrt(Math.pow(touchX - px, 2) + Math.pow(touchY - py, 2));
+      if (distance < 10) { // 10 pixels threshold for player click
+        draggedPlayer = player;
+      }
+    });
+  });
+
+  canvas.addEventListener("touchmove", (event) => {
+    if (draggedPlayer) {
+      hasbeenDragged = true;
+      const rect = canvas.getBoundingClientRect();
+      const moveX = (event.touches[0].clientX - rect.left) / rect.width * W;
+      const moveY = (event.touches[0].clientY - rect.top) / rect.height * H;
+      draggedPlayer.x = ((moveX - field.x) / field.w) * 100;
+      draggedPlayer.y = ((moveY - field.y) / field.h) * 100;
+      resizeCanvas(); // redraw the pitch with the new player position
+    }
+  });
+
+  canvas.addEventListener("touchend", (event) => {
+    draggedPlayer = null;
+  });
+
+  canvas.addEventListener("touchcancel", (event) => {
+    draggedPlayer = null;
+  });
+
+
+ </script>
+</body>
+</html>
