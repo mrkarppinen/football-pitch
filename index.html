@@ -61,6 +61,19 @@
    ctx.stroke();
   }
 
+  function dashedLine(x1, y1, x2, y2, color = white, width = 4, dashLength = 10) {
+   ctx.beginPath();
+   ctx.setLineDash([dashLength, dashLength]);
+   ctx.moveTo(x1, y1);
+   ctx.lineTo(x2, y2);
+   ctx.lineWidth = width;
+   ctx.strokeStyle = color;
+   ctx.lineCap = "round";
+   ctx.lineJoin = "round";
+   ctx.stroke();
+   ctx.setLineDash([]); // Reset line dash
+  };
+
   function circle(x, y, radius, fill = false, width = 4, fillStyle = white) {
    ctx.beginPath();
    ctx.arc(x, y, radius, 0, Math.PI * 2);
@@ -271,45 +284,516 @@
    );
   }
 
+  function drawDirectionPlayerFacing(from, direction, directionLength) {
+      ctx.beginPath();
+      ctx.moveTo(from.x, from.y);
+      ctx.lineTo(
+       from.x + (direction.x / directionLength) * 12,
+       from.y + (direction.y / directionLength) * 12
+      );
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = "#39ff14";
+      ctx.lineCap = "round";
+      ctx.stroke();
+  }
+
+  function drawPlayerName(player, x, y) {
+    ctx.font = "11px Arial, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "bottom";
+    ctx.fillStyle = "rgba(190, 190, 190, 0.85)";
+    ctx.fillText(`${player.name} ${player.id}`, x, y - 21);
+  }
+
+  function drawPlayerEnergy(player, x, y) {
+    ctx.fillStyle = "rgba(0, 0, 0, 0.65)";
+    ctx.fillRect(x - 12, y - 17, 24, 3);
+    ctx.fillStyle = player.energy > 25 ? "#39ff14" : "#ff4b4b";
+    ctx.fillRect(x - 12, y - 17, 24 * (player.energy / 100), 3);
+   }
+
+  // CLASSES
+
+  class Player {
+  constructor({ id, name, x, y, team, hasBall = false, humanControllable = false, speed = 120, runningSpeed = 240, direction, energy = 100, kickSpeed = 0 }) {
+   this.id = id;
+   this.name = name;
+    this.x = x;
+    this.y = y;
+    this.team = team;
+    this.hasBall = hasBall;
+    this.humanControllable = humanControllable;
+    this.speed = speed;
+    this.runningSpeed = runningSpeed;
+    this.direction = direction;
+    this.energy = energy;
+    this.kickSpeed = kickSpeed;
+    this.exhausted = false;
+    this.previousPosition = { x, y };
+   }
+
+  get id() { return this._id; }
+  set id(value) { this._id = value; }
+  get name() { return this._name; }
+  set name(value) { this._name = String(value); }
+   get x() { return this._x; }
+   set x(value) { this._x = Math.max(0, Math.min(100, value)); }
+   get y() { return this._y; }
+   set y(value) { this._y = Math.max(0, Math.min(100, value)); }
+   get team() { return this._team; }
+   set team(value) { this._team = value; }
+   get hasBall() { return this._hasBall; }
+   set hasBall(value) { this._hasBall = Boolean(value); }
+  get humanControllable() { return this._humanControllable; }
+  set humanControllable(value) { this._humanControllable = Boolean(value); }
+   get speed() { return this._speed; }
+   set speed(value) { this._speed = Math.max(0, Number(value) || 0); }
+   get runningSpeed() { return this._runningSpeed; }
+   set runningSpeed(value) { this._runningSpeed = Math.max(0, Number(value) || 0); }
+  get kickSpeed() { return this._kickSpeed; }
+  set kickSpeed(value) { this._kickSpeed = Math.max(0, Number(value) || 0); }
+   get direction() { return { ...this._direction }; }
+   set direction(value) {
+    const length = Math.hypot(value.x, value.y) || 1;
+    this._direction = { x: value.x / length, y: value.y / length };
+   }
+   get energy() { return this._energy; }
+   set energy(value) { this._energy = Math.max(0, Math.min(100, Number(value) || 0)); }
+   get exhausted() { return this._exhausted; }
+   set exhausted(value) { this._exhausted = Boolean(value); }
+
+  update(deltaTime, context) {
+   this.energy = Math.min(100, this.energy + context.energyRecoveryPerSecond * deltaTime);
+   if (!context.input.run) this.exhausted = false;
+  }
+
+   render () {
+    const px = field.x + (this.x / 100) * field.w;
+    const py = field.y + (this.y / 100) * field.h;
+    const color = this.team === "home" ? "#2735F5" : "#DC9450";
+    const directionLength = Math.hypot(this.direction.x, this.direction.y) || 1;
+
+    drawDirectionPlayerFacing({x: px, y:py}, {x: this.direction.x, y: this.direction.y}, directionLength);
+    circle(px, py, 10, true, 4, color);
+    drawPlayerName(this, px, py);
+    drawPlayerEnergy(this, px, py);
+   }
+  }
+
+  function movePlayer(player, direction, speed, deltaTime, players, field) {
+   const marginX = (10 / field.w) * 100;
+   const marginY = (10 / field.h) * 100;
+   const nextX = Math.max(marginX, Math.min(100 - marginX,
+    player.x + (direction.x * speed * deltaTime / field.w) * 100));
+   const nextY = Math.max(marginY, Math.min(100 - marginY,
+    player.y + (direction.y * speed * deltaTime / field.h) * 100));
+  player.x = nextX;
+  player.y = nextY;
+  }
+
+  function updateHumanPlayer(player, deltaTime, context) {
+   const { input, players, field, energyDrainPerSecond, energyRecoveryPerSecond } = context;
+   const isRunning = input.run && input.move > 0 && !player.exhausted && player.energy > 0;
+
+   if (!input.run) player.exhausted = false;
+
+   if (input.turn || input.move) {
+    const angle = Math.atan2(player.direction.y, player.direction.x)
+     + input.turn * 2.8 * deltaTime;
+    player.direction = { x: Math.cos(angle), y: Math.sin(angle) };
+    const speed = isRunning ? player.runningSpeed : player.speed;
+    movePlayer(player, {
+     x: player.direction.x * input.move,
+     y: player.direction.y * input.move
+    }, speed, deltaTime, players, field);
+   }
+
+   if (isRunning) {
+    player.energy = Math.max(0, player.energy - energyDrainPerSecond * deltaTime);
+    if (player.energy === 0) player.exhausted = true;
+   } else {
+    player.energy = Math.min(100, player.energy + energyRecoveryPerSecond * deltaTime);
+   }
+  }
+
+  class HumanPlayer extends Player {
+   update(deltaTime, context) {
+    if (this.humanControllable) {
+     updateHumanPlayer(this, deltaTime, context);
+    } else {
+     super.update(deltaTime, context);
+    }
+   }
+  }
+
+  class AIPlayer extends Player {
+   update(deltaTime, context) {
+    super.update(deltaTime, context);
+    const holder = context.players.find(player => player.hasBall);
+    const target = holder?.team === this.team
+     ? { x: this.team === "home" ? 100 : 0, y: this.y }
+     : context.ball;
+    const dx = ((target.x - this.x) / 100) * context.field.w;
+    const dy = ((target.y - this.y) / 100) * context.field.h;
+    const distance = Math.hypot(dx, dy);
+
+    if (distance > 1) {
+     const direction = { x: dx / distance, y: dy / distance };
+     this.direction = direction;
+     movePlayer(this, direction, this.speed, deltaTime, context.players, context.field);
+    }
+   }
+  }
+
+  class Ball {
+  constructor({ x, y, velocity = { x: 0, y: 0 }, friction = 0.98, radius = 5, pickupRadius = 15 }) {
+    this.x = x;
+    this.y = y;
+    this.velocity = { ...velocity };
+    this.friction = friction;
+    this.radius = radius;
+    this.pickupRadius = pickupRadius;
+    this.boundaryHitX = false;
+    this.boundaryHitY = false;
+    this.previousPosition = { x, y };
+   }
+
+  update(deltaTime, holder) {
+    this.previousPosition = { x: this.x, y: this.y };
+    this.boundaryHitX = false;
+    this.boundaryHitY = false;
+
+    if (holder) {
+     this.x = holder.x + (holder.direction.x * 12 / field.w) * 100;
+     this.y = holder.y + (holder.direction.y * 12 / field.h) * 100;
+    } else {
+     this.x += (this.velocity.x * deltaTime / field.w) * 100;
+     this.y += (this.velocity.y * deltaTime / field.h) * 100;
+
+     const frictionFactor = Math.pow(this.friction, deltaTime * 60);
+     this.velocity.x *= frictionFactor;
+     this.velocity.y *= frictionFactor;
+
+    const minX = -(field.x / field.w) * 100;
+    const maxX = 100 + ((W - field.x - field.w) / field.w) * 100;
+    if (this.x < minX || this.x > maxX) this.boundaryHitX = true;
+    if (this.y < 0 || this.y > 100) this.boundaryHitY = true;
+    this.x = Math.max(minX, Math.min(maxX, this.x));
+     this.y = Math.max(0, Math.min(100, this.y));
+
+     if (Math.hypot(this.velocity.x, this.velocity.y) < 8) {
+      this.velocity.x = 0;
+      this.velocity.y = 0;
+     }
+    }
+
+   }
+
+   distanceTo(entity) {
+    return Math.hypot(
+     ((this.x - entity.x) / 100) * field.w,
+     ((this.y - entity.y) / 100) * field.h
+    );
+   }
+
+   isTouchingPlayer(player) {
+    const segmentX = ((this.x - this.previousPosition.x) / 100) * field.w;
+    const segmentY = ((this.y - this.previousPosition.y) / 100) * field.h;
+    const playerOffsetX = ((player.x - this.previousPosition.x) / 100) * field.w;
+    const playerOffsetY = ((player.y - this.previousPosition.y) / 100) * field.h;
+    const segmentLengthSquared = segmentX * segmentX + segmentY * segmentY;
+    const projection = segmentLengthSquared
+     ? Math.max(0, Math.min(1, (playerOffsetX * segmentX + playerOffsetY * segmentY) / segmentLengthSquared))
+     : 0;
+    return Math.hypot(playerOffsetX - projection * segmentX, playerOffsetY - projection * segmentY) <= this.pickupRadius;
+   }
+
+   isTouchingPost(post) {
+    const segmentX = ((this.x - this.previousPosition.x) / 100) * field.w;
+    const segmentY = ((this.y - this.previousPosition.y) / 100) * field.h;
+    const postOffsetX = ((post.x - this.previousPosition.x) / 100) * field.w;
+    const postOffsetY = ((post.y - this.previousPosition.y) / 100) * field.h;
+    const segmentLengthSquared = segmentX * segmentX + segmentY * segmentY;
+    const projection = segmentLengthSquared
+     ? Math.max(0, Math.min(1, (postOffsetX * segmentX + postOffsetY * segmentY) / segmentLengthSquared))
+     : 0;
+    return Math.hypot(postOffsetX - projection * segmentX, postOffsetY - projection * segmentY) <= this.radius + post.radius;
+   }
+
+   resolvePostCollision(post) {
+    const segmentX = ((this.x - this.previousPosition.x) / 100) * field.w;
+    const segmentY = ((this.y - this.previousPosition.y) / 100) * field.h;
+    const postOffsetX = ((post.x - this.previousPosition.x) / 100) * field.w;
+    const postOffsetY = ((post.y - this.previousPosition.y) / 100) * field.h;
+    const segmentLengthSquared = segmentX * segmentX + segmentY * segmentY;
+    const projection = segmentLengthSquared
+     ? Math.max(0, Math.min(1, (postOffsetX * segmentX + postOffsetY * segmentY) / segmentLengthSquared))
+     : 0;
+    const closestX = this.previousPosition.x + (segmentX * projection / field.w) * 100;
+    const closestY = this.previousPosition.y + (segmentY * projection / field.h) * 100;
+    const dx = ((closestX - post.x) / 100) * field.w;
+    const dy = ((closestY - post.y) / 100) * field.h;
+    const distance = Math.hypot(dx, dy);
+    const speed = Math.hypot(this.velocity.x, this.velocity.y) || 1;
+    const normalX = distance ? dx / distance : -this.velocity.x / speed;
+    const normalY = distance ? dy / distance : -this.velocity.y / speed;
+    const velocityAlongNormal = this.velocity.x * normalX + this.velocity.y * normalY;
+
+    if (velocityAlongNormal < 0) {
+     this.velocity.x -= 2 * velocityAlongNormal * normalX;
+     this.velocity.y -= 2 * velocityAlongNormal * normalY;
+    }
+
+    this.x = closestX + (normalX * (this.radius + post.radius) / field.w) * 100;
+    this.y = closestY + (normalY * (this.radius + post.radius) / field.h) * 100;
+    return true;
+   }
+
+   isInsideGoal(goal) {
+    return goal.contains(this);
+   }
+
+   render(holder = null) {
+    const position = holder
+     ? {
+       x: holder.x + (holder.direction.x * 12 / field.w) * 100,
+       y: holder.y + (holder.direction.y * 12 / field.h) * 100
+      }
+     : this;
+    const bx = field.x + (position.x / 100) * field.w;
+    const by = field.y + (position.y / 100) * field.h;
+    circle(bx, by, this.radius, true, 2, "#fff");
+   }
+  }
+
+  class GoalArea {
+   constructor(side, { yMin, yMax }) {
+    this.side = side;
+    this.x = side === "left" ? 0 : 100;
+    this.yMin = yMin;
+    this.yMax = yMax;
+   }
+
+   contains(ball) {
+    const edgeTolerance = (ball.radius / field.w) * 100;
+    const isAtGoalLine = this.side === "left"
+     ? ball.x <= edgeTolerance
+     : ball.x >= 100 - edgeTolerance;
+    return isAtGoalLine && ball.y >= this.yMin && ball.y <= this.yMax;
+   }
+  }
+
+  class GoalPost {
+   constructor(x, y, radius = 4) {
+    this.x = x;
+    this.y = y;
+    this.radius = radius;
+   }
+  }
+
   const players = [
-    { x: 30, y: 34, team: "home" },
-    { x: 50, y: 20, team: "home", hasBall: true  },
-    { x: 60, y: 70, team: "home" },
-    { x: 72, y: 50, team: "away" },
-    { x: 70, y: 34, team: "away" },
-    { x: 70, y: 64, team: "away" }
+    new HumanPlayer({ id: 1, name: "Player1", x: 42, y: 20, team: "home", humanControllable: true, speed: 120, runningSpeed: 240, direction: { x: 1, y: 0 } }),
+    new HumanPlayer({ id: 88, name: "Karppinen", x: 40, y: 40, team: "home", hasBall: false, humanControllable: true, speed: 120, runningSpeed: 240, direction: { x: 1, y: 0 } }),
+    new HumanPlayer({ id: 3, name: "Player3", x: 40, y: 70, team: "home", speed: 120, runningSpeed: 240, direction: { x: 1, y: 0 } }),
+    new AIPlayer({ id: 4, name: "Player4", x: 85, y: 66, team: "away", speed: 120, runningSpeed: 240, direction: { x: -1, y: 0 } }),
+    new AIPlayer({ id: 5, name: "Player5", x: 83, y: 34, team: "away", speed: 120, runningSpeed: 240, direction: { x: -1, y: 0 } }),
+    new AIPlayer({ id: 6, name: "Player6", x: 87, y: 77, team: "away", speed: 120, runningSpeed: 240, direction: { x: -1, y: 0 } })
   ];
+
+  function setHumanController(player) {
+   const humanPlayer = player instanceof HumanPlayer ? player : null;
+   players.forEach(candidate => candidate.humanControllable = candidate === humanPlayer);
+  }
+
+  setHumanController(players.find(player => player.humanControllable));
+
+  const energyDrainPerSecond = 40;
+  const energyRecoveryPerSecond = 10;
+  const kickChargeDuration = 2;
+  const minKickSpeed = 220;
+  const maxKickSpeed = 700;
+  const kickPickupGracePeriod = 0.35;
+  const ballPickupRadius = 15;
+  let kickChargeTime = 0;
+  let lastKicker = null;
+  let kickPickupGraceRemaining = 0;
+  let recentlyDispossessedPlayer = null;
+  let possessionGraceRemaining = 0;
+
+  // Ball position and motion state.
+  const ball = new Ball({ x: 49, y: 50, velocity: { x: 0, y: 0 }, friction: 0.98, pickupRadius: ballPickupRadius });
+  const goalHalfHeight = (100 * (field.w * 7.32 / 105) / 2) / field.h;
+  const goalMouth = { yMin: 50 - goalHalfHeight, yMax: 50 + goalHalfHeight };
+  const goalAreas = [new GoalArea("left", goalMouth), new GoalArea("right", goalMouth)];
+  const goalPosts = goalAreas.flatMap(goal => [
+   new GoalPost(goal.x, goal.yMin),
+   new GoalPost(goal.x, goal.yMax)
+  ]);
+  const initialHolder = players.find(player => player.hasBall);
+  if (initialHolder) {
+   ball.x = initialHolder.x + (initialHolder.direction.x * 12 / field.w) * 100;
+   ball.y = initialHolder.y + (initialHolder.direction.y * 12 / field.h) * 100;
+  }
+
+  function kickBall(player) {
+   const direction = player.direction;
+   const directionX = direction.x * field.w;
+   const directionY = direction.y * field.h;
+   const directionLength = Math.hypot(directionX, directionY) || 1;
+
+   ball.x = player.x + (direction.x * 12 / field.w) * 100;
+   ball.y = player.y + (direction.y * 12 / field.h) * 100;
+   ball.velocity.x = (directionX / directionLength) * player.kickSpeed;
+   ball.velocity.y = (directionY / directionLength) * player.kickSpeed;
+   player.hasBall = false;
+   player.kickSpeed = 0;
+
+  lastKicker = player;
+  kickPickupGraceRemaining = kickPickupGracePeriod;
+  const nearestTeammate = players
+    .filter(candidate => candidate instanceof HumanPlayer && candidate.team === player.team && candidate !== player)
+   .reduce((nearest, candidate) => {
+   const distance = Math.hypot(
+    ((candidate.x - ball.x) / 100) * field.w,
+    ((candidate.y - ball.y) / 100) * field.h
+   );
+   return !nearest || distance < nearest.distance ? { player: candidate, distance } : nearest;
+   }, null);
+  const currentHumanController = players.find(candidate => candidate.humanControllable);
+  setHumanController(nearestTeammate?.player ?? (player instanceof HumanPlayer ? player : currentHumanController));
+  }
+
+  function updateBall(deltaTime) {
+    kickPickupGraceRemaining = Math.max(0, kickPickupGraceRemaining - deltaTime);
+    possessionGraceRemaining = Math.max(0, possessionGraceRemaining - deltaTime);
+    if (possessionGraceRemaining === 0) recentlyDispossessedPlayer = null;
+    const holder = players.find(player => player.hasBall);
+    ball.update(deltaTime, holder);
+
+    if (!holder) {
+        const closestPlayer = players.filter(player => player instanceof HumanPlayer && player.team === "home").reduce((closest, player) => {
+        const distance = Math.hypot(
+          ((player.x - ball.x) / 100) * field.w,
+          ((player.y - ball.y) / 100) * field.h
+        );
+        return !closest || distance < closest.distance ? { player, distance } : closest;
+      }, null);
+      if (closestPlayer) {
+        setHumanController(closestPlayer.player);
+      }
+    }
+  }
+
+  function resolvePlayerCollision(playerA, playerB) {
+   const distance = Math.hypot(
+    ((playerA.x - playerB.x) / 100) * field.w,
+    ((playerA.y - playerB.y) / 100) * field.h
+   );
+   if (distance >= 20) return;
+
+   const movedA = playerA.x !== playerA.previousPosition.x || playerA.y !== playerA.previousPosition.y;
+   const movedB = playerB.x !== playerB.previousPosition.x || playerB.y !== playerB.previousPosition.y;
+   if (movedA) {
+    playerA.x = playerA.previousPosition.x;
+    playerA.y = playerA.previousPosition.y;
+   }
+   if (movedB) {
+    playerB.x = playerB.previousPosition.x;
+    playerB.y = playerB.previousPosition.y;
+   }
+  }
+
+  function resolveBallPlayerCollision(candidate, currentHolder) {
+   const previousHolder = currentHolder;
+   recentlyDispossessedPlayer = previousHolder;
+   possessionGraceRemaining = previousHolder ? kickPickupGracePeriod : 0;
+  players.forEach(player => player.hasBall = player === candidate);
+  if (candidate instanceof HumanPlayer) setHumanController(candidate);
+   ball.velocity.x = 0;
+   ball.velocity.y = 0;
+   lastKicker = null;
+   kickPickupGraceRemaining = 0;
+  }
+
+  function detectAndResolveCollisions() {
+   const entities = [...players, ball, ...goalPosts, ...goalAreas];
+   const currentHolder = players.find(player => player.hasBall);
+   let closestBallContact = null;
+    let collidedWithPost = false;
+    let enteredGoalSide = null;
+    ball.goalSide = null;
+
+   for (let i = 0; i < entities.length; i++) {
+    for (let j = i + 1; j < entities.length; j++) {
+     const first = entities[i];
+     const second = entities[j];
+
+     if (first instanceof Player && second instanceof Player) {
+      resolvePlayerCollision(first, second);
+     } else if (
+      (first instanceof Ball && second instanceof Player) ||
+      (first instanceof Player && second instanceof Ball)
+     ) {
+      const candidatePlayer = first instanceof Player ? first : second;
+      const collisionBall = first instanceof Ball ? first : second;
+      if (
+       candidatePlayer !== currentHolder &&
+       !(candidatePlayer === lastKicker && kickPickupGraceRemaining > 0) &&
+       !(candidatePlayer === recentlyDispossessedPlayer && possessionGraceRemaining > 0) &&
+       collisionBall.isTouchingPlayer(candidatePlayer)
+      ) {
+       const distance = collisionBall.distanceTo(candidatePlayer);
+       if (!closestBallContact || distance < closestBallContact.distance) {
+        closestBallContact = { player: candidatePlayer, distance };
+       }
+      }
+     } else if (
+      (first instanceof Ball && second instanceof GoalPost) ||
+      (first instanceof GoalPost && second instanceof Ball)
+     ) {
+      const collisionBall = first instanceof Ball ? first : second;
+      const post = first instanceof GoalPost ? first : second;
+      if (collisionBall.isTouchingPost(post)) {
+       collisionBall.resolvePostCollision(post);
+       collidedWithPost = true;
+      }
+     } else if (
+      (first instanceof Ball && second instanceof GoalArea) ||
+      (first instanceof GoalArea && second instanceof Ball)
+     ) {
+      const collisionBall = first instanceof Ball ? first : second;
+      const goal = first instanceof GoalArea ? first : second;
+      if (collisionBall.isInsideGoal(goal)) enteredGoalSide = goal.side;
+     }
+    }
+   }
+
+   if (!collidedWithPost) {
+    if (ball.boundaryHitX) ball.velocity.x = 0;
+    if (ball.boundaryHitY) ball.velocity.y *= -0.65;
+   }
+   ball.goalSide = enteredGoalSide;
+
+   if (closestBallContact) {
+    resolveBallPlayerCollision(closestBallContact.player, currentHolder);
+   }
+
+   const finalHolder = players.find(player => player.hasBall);
+   if (finalHolder) ball.update(0, finalHolder);
+  }
 
 
   function drawPlayers() {
    // Example player positions
-
-
-   players.forEach(player => {
-    const px = field.x + (player.x / 100) * field.w;
-    const py = field.y + (player.y / 100) * field.h;
-    const color = player.team === "home" ? "#2735F5" : "#DC9450";
-    circle(px, py, 10, true, 4, color);
-   });
+   players.forEach(player => player.render());
   }
 
   function drawBall(playerWithBall) {
-   // Example ball position
-   // if player with adjust ball next to player, otherwise place ball in center of pitch  
-   const ball = playerWithBall ? { x: playerWithBall.x + 1, y: playerWithBall.y } : { x: 52, y: 34 }; // Center of the pitch
-
-   const bx = field.x + (ball.x / 100) * field.w;
-   const by = field.y + (ball.y / 100) * field.h;
-     // draw ball look more like ball with white and black color not just one color
-   circle(bx, by, 5, true, 2, "#fff");
-                  
-
-
-   
+   ball.render(playerWithBall);
   }
 
   function drawPassTrajectory(playerFrom, playerTo) {
-   const fromX = field.x + ((playerFrom.x + 1) / 100) * field.w;
+   const fromX = field.x + (playerFrom.x / 100) * field.w;
    const fromY = field.y + (playerFrom.y / 100) * field.h;
    const toX = field.x + (playerTo.x / 100) * field.w;
    const toY = field.y + (playerTo.y / 100) * field.h;
@@ -325,15 +809,7 @@
     return false;
    });
   
-
-   ctx.beginPath();
-   ctx.moveTo(fromX, fromY);
-   ctx.lineTo(toX, toY);
-   ctx.lineWidth = 2;
-   ctx.strokeStyle = intersects ? "rgba(255, 0, 0, 0.7)" : "rgba(255, 255, 255, 0.7)";
-   ctx.setLineDash([5, 5]); // Dashed line
-   ctx.stroke();
-   ctx.setLineDash([]); // Reset line dash
+   dashedLine(fromX, fromY, toX, toY, intersects ? "#ff0000" : "#ffffff", 2);
   }
 
   function drawPassTrajectoriesWithOwnTeam(teamPlayers) {
@@ -344,12 +820,22 @@
    for (let i = 0; i < teamPlayers.length; i++) {
     for (let j = i + 1; j < teamPlayers.length; j++) {
       if (teamPlayers[i] === playerWithBall) {
-        drawPassTrajectory(teamPlayers[i], teamPlayers[j]);
+        drawPassTrajectory({x: ball.x, y: ball.y, team: teamPlayers[i].team}, teamPlayers[j]);
       } else if (teamPlayers[j] === playerWithBall) {
-        drawPassTrajectory(teamPlayers[j], teamPlayers[i]);
+        drawPassTrajectory({x: ball.x, y: ball.y, team: teamPlayers[j].team}, teamPlayers[i]);
       }
     }
    }
+  }
+
+  function render() {
+   drawPitch();
+   drawPlayers();
+   const playerWithBall = players.find(player => player.hasBall);
+   drawBall(playerWithBall);
+   /*if (playerWithBall) {
+    drawPassTrajectoriesWithOwnTeam(players.filter(player => player.team === playerWithBall.team));
+   }*/
   }
 
   function resizeCanvas() {
@@ -365,23 +851,91 @@
     0, 0
    );
 
-   drawPitch();
-   // draw players, ball, etc. here if needed
-    drawPlayers();
-    const playerWithBall = players.find(player => player.hasBall);
-    players.forEach(player => {
-      if (player.hasBall) {
-        drawBall(player);
-      }
-    });
-    // draw pass trajectories for the team with the ball
-    drawPassTrajectoriesWithOwnTeam(players.filter(p => p.team === playerWithBall.team));
+  render();
   }
 
   const observer = new ResizeObserver(resizeCanvas);
   observer.observe(canvas.parentElement);
   resizeCanvas();
 
+
+  const pressedKeys = new Set();
+  let playerInput = { turn: 0, move: 0, run: false };
+  const controlKeys = ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"];
+
+  function processInput() {
+   playerInput = {
+    turn: Number(pressedKeys.has("ArrowRight")) - Number(pressedKeys.has("ArrowLeft")),
+    move: Number(pressedKeys.has("ArrowUp")) - Number(pressedKeys.has("ArrowDown")),
+    run: pressedKeys.has("s"),
+    kick: pressedKeys.has("Space")
+   };
+  }
+
+  function update(deltaTime) {
+   const controlledPlayer = players.find(player => player.humanControllable);
+   const context = {
+    input: playerInput,
+    players,
+    field,
+    ball,
+    energyDrainPerSecond,
+    energyRecoveryPerSecond
+   };
+
+  players.forEach(player => {
+   player.previousPosition = { x: player.x, y: player.y };
+   player.update(deltaTime, context);
+  });
+
+    if (controlledPlayer?.hasBall && playerInput.kick) {
+     kickChargeTime = Math.min(kickChargeDuration, kickChargeTime + deltaTime);
+     const charge = kickChargeTime / kickChargeDuration;
+     controlledPlayer.kickSpeed = minKickSpeed + (maxKickSpeed - minKickSpeed) * charge;
+    } else if (kickChargeTime > 0) {
+     if (controlledPlayer?.hasBall && !playerInput.kick) kickBall(controlledPlayer);
+     kickChargeTime = 0;
+    }
+
+   updateBall(deltaTime);
+  }
+
+  // GAME LOOP
+  function gameLoop(timestamp) {
+    const deltaTime = Math.min((timestamp - (gameLoop.previousTime ?? timestamp)) / 1000, 0.05);
+    gameLoop.previousTime = timestamp;
+
+    processInput();
+    update(deltaTime);
+    detectAndResolveCollisions();
+    render();
+   requestAnimationFrame(gameLoop);
+  }
+
+  requestAnimationFrame(gameLoop);
+
+  // EVENT LISTENERS
+
+  window.addEventListener("keydown", (event) => {
+    const key = event.key.toLowerCase();
+    if (controlKeys.includes(event.key)) {
+     event.preventDefault();
+     pressedKeys.add(event.key);
+    } else if (event.code === "Space") {
+     event.preventDefault();
+     pressedKeys.add("Space");
+    } else if (key === "s") {
+     pressedKeys.add(key);
+    }
+  });
+
+  window.addEventListener("keyup", (event) => {
+    pressedKeys.delete(event.key.toLowerCase());
+    pressedKeys.delete(event.key);
+    pressedKeys.delete(event.code);
+  });
+
+  window.addEventListener("blur", () => pressedKeys.clear());
 
   // add event listener to the canvas to detect click on a player and then set that player as the one with the ball, and redraw the pitch with the new player with the ball
   canvas.addEventListener("click", (event) => {
@@ -401,7 +955,8 @@
       if (distance < 10) { // 10 pixels threshold for player click
         players.forEach(p => p.hasBall = false); // reset all players
         player.hasBall = true; // set clicked player as the one with the ball
-        resizeCanvas(); // redraw the pitch with the new player with the ball
+        if (player instanceof HumanPlayer) setHumanController(player);
+        render(); // redraw with the new player in possession
       }
     });
   });
@@ -433,7 +988,7 @@
       const moveY = (event.clientY - rect.top) / rect.height * H;
       draggedPlayer.x = ((moveX - field.x) / field.w) * 100;
       draggedPlayer.y = ((moveY - field.y) / field.h) * 100;
-      resizeCanvas(); // redraw the pitch with the new player position
+      render(); // redraw with the updated player position
     }
   });
 
@@ -465,7 +1020,7 @@
       const moveY = (event.touches[0].clientY - rect.top) / rect.height * H;
       draggedPlayer.x = ((moveX - field.x) / field.w) * 100;
       draggedPlayer.y = ((moveY - field.y) / field.h) * 100;
-      resizeCanvas(); // redraw the pitch with the new player position
+      render(); // redraw with the updated player position
     }
   });
 

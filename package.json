@@ -1,0 +1,26 @@
+{
+  "name": "football-pitch",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "npm run build:game && npm run build:ball-possession",
+    "build:game": "esbuild scripts/game.js --bundle --platform=browser --format=iife --outfile=game.bundle.js",
+    "build:ball-possession": "esbuild scripts/ballPossession.js --bundle --platform=browser --format=iife --outfile=ballPossession.bundle.js",
+    "start": "npm run build && node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mrkarppinen/football-pitch.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mrkarppinen/football-pitch/issues"
+  },
+  "homepage": "https://github.com/mrkarppinen/football-pitch#readme",
+  "devDependencies": {
+    "esbuild": "^0.25.0"
+  }
+}
