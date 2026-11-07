@@ -36,3 +36,24 @@ const run = () => {
 
 run();
 console.log('ok - AI goalkeeper clears at the configured clearance speed');
+
+const outOfBoundsScene = createGame();
+outOfBoundsScene.match.changeState(MatchStates.MATCH_ON);
+outOfBoundsScene.match.players.forEach(player => {
+    player.hasBall = false;
+});
+outOfBoundsScene.match.ball.x = outOfBoundsScene.field.x + outOfBoundsScene.field.width / 2;
+outOfBoundsScene.match.ball.y = outOfBoundsScene.field.y - 1;
+outOfBoundsScene.match.ball.previousPosition = {
+    x: outOfBoundsScene.match.ball.x,
+    y: outOfBoundsScene.match.ball.y
+};
+outOfBoundsScene.match.update(1 / 60, {
+    turn: 0,
+    move: 0,
+    run: false,
+    kick: false,
+    showDefendArea: false
+});
+assert.strictEqual(outOfBoundsScene.match.currentState, MatchStates.SIDELINE_KICK);
+console.log('ok - free ball crossing the sideline starts a sideline kick');

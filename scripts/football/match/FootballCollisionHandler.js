@@ -8,6 +8,12 @@ export default class FootballCollisionHandler {
     handle(entityA, entityB) {
         const ball = this.getEntity(entityA, entityB, GameObjectType.BALL);
         if (ball) {
+            const boundary = this.getBoundary(entityA, entityB);
+            if (boundary) {
+                this.handleBoundary(boundary);
+                return;
+            }
+
             const player = this.getEntity(entityA, entityB, GameObjectType.PLAYER);
             if (player) {
                 this.match.tryAcquirePossession(player);
@@ -29,20 +35,30 @@ export default class FootballCollisionHandler {
             entityB.type === GameObjectType.PLAYER ? entityB : null;
         if (!player?.hasBall) return;
 
-        const boundary = entityA.type === GameObjectType.SIDELINE ? entityA :
-            entityB.type === GameObjectType.SIDELINE ? entityB :
-                entityA.type === GameObjectType.ENDLINE ? entityA :
-                    entityB.type === GameObjectType.ENDLINE ? entityB : null;
-        if (boundary?.type === GameObjectType.SIDELINE) {
-            this.match.startSidelineKick(boundary.side);
-        } else if (boundary?.type === GameObjectType.ENDLINE) {
-            this.match.startEndlineRestart(boundary.side);
-        }
+        this.handleBoundary(this.getBoundary(entityA, entityB));
     }
 
     getEntity(entityA, entityB, type) {
         if (entityA.type === type) return entityA;
         if (entityB.type === type) return entityB;
         return null;
+    }
+
+    getBoundary(entityA, entityB) {
+        return [
+            entityA,
+            entityB
+        ].find(entity =>
+            entity.type === GameObjectType.SIDELINE ||
+            entity.type === GameObjectType.ENDLINE
+        ) ?? null;
+    }
+
+    handleBoundary(boundary) {
+        if (boundary?.type === GameObjectType.SIDELINE) {
+            this.match.startSidelineKick(boundary.side);
+        } else if (boundary?.type === GameObjectType.ENDLINE) {
+            this.match.startEndlineRestart(boundary.side);
+        }
     }
 }

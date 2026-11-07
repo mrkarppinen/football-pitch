@@ -45,3 +45,15 @@ test('carrying players trigger the appropriate restart at a boundary', () => {
         ['endline', 'left']
     ]);
 });
+
+test('a free ball triggers a sideline or endline restart', () => {
+    const ball = { type: GameObjectType.BALL };
+
+    handler.handle(ball, { type: GameObjectType.SIDELINE, side: 'bottom' });
+    handler.handle({ type: GameObjectType.ENDLINE, side: 'right' }, ball);
+
+    assert.deepEqual(calls.splice(0), [
+        ['sideline', 'bottom'],
+        ['endline', 'right']
+    ]);
+});
