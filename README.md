@@ -43,7 +43,7 @@ Each `AreaDefendingTeam` extends `Team` with a defensive-area radius and assigns
 
 `MatchManager` coordinates match updates, while `KickController` owns human charge progression and AI kick chance/aiming, `MatchRestartManager` owns restart setup, and `MatchStateManager` validates state transitions. Human kick charge is capped at its configured duration. AI kick chance is calculated per update from a per-second probability, so it remains stable across frame rates. Goalkeeper clearance passes its intended speed into `KickController.aim` rather than overwriting the maximum shot speed afterward.
 
-The match clock defaults to 90 seconds and can be changed through `MATCH_DURATION_SECONDS` in `scripts/scenes/football-match/settings.js`, or overridden when creating a scene with `createGame({ matchDurationSeconds })`. When time expires, play stops and `MatchResultScene` renders the score and outcome; Space starts a fresh match with the same configured duration.
+The match clock defaults to 90 seconds and can be changed through `MATCH_DURATION_SECONDS` in `scripts/scenes/football-match/settings.js`, or overridden when creating a scene with `createGame({ matchDurationSeconds })`. When time expires, play stops and `MatchResultScene` renders the score, outcome, and goal events with scorer names and elapsed match times; own goals are marked. Space starts a fresh match with the same configured duration.
 
 AI goalkeeper speed and goal-shot target heights are configured by `AI_GOALKEEPER_SPEED` and `GOAL_MOUTH_AIM_FRACTIONS` in the same settings module. Human kick charge duration is unchanged; while charging, a vertical bar appears behind the player and fills from bottom to top.
 

@@ -42,6 +42,7 @@ export default class MatchManager {
         this.kickController = new KickController(field, { goalMouthAimFractions });
         this.kickoffTeam = this.homeTeam;
         this.score = { home: 0, away: 0 };
+        this.goalEvents = [];
         this.kickChargeTime = 0;
         this.lastTouchTeam = this.kickoffTeam;
         this.celebrationRemaining = 0;
@@ -404,6 +405,16 @@ export default class MatchManager {
     scoreGoal(goal) {
         if (this.currentState !== MatchStates.MATCH_ON) return;
         const scoringTeam = goal.goalSide === 'right' ? this.homeTeam : this.awayTeam;
+        const scorer = this.ball.lastKicker;
+        const elapsedSeconds = Math.max(0, this.durationSeconds - this.remainingTime);
+        this.goalEvents.push({
+            scoringTeam: scoringTeam.name,
+            scorer: scorer?.name ?? 'Unknown scorer',
+            scorerTeam: scorer?.team?.name ?? null,
+            ownGoal: Boolean(scorer && scorer.team !== scoringTeam),
+            timeSeconds: Math.floor(elapsedSeconds),
+            time: this.formatMatchTime(elapsedSeconds)
+        });
         this.score[scoringTeam === this.homeTeam ? 'home' : 'away'] += 1;
         this.kickoffTeam = this.getOpponentTeam(scoringTeam);
         this.setTeamModes(this.kickoffTeam);
@@ -488,6 +499,13 @@ export default class MatchManager {
 
     formatRemainingTime() {
         const totalSeconds = Math.ceil(this.remainingTime);
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+        return `${minutes}:${seconds < 10 ? `0${seconds}` : seconds}`;
+    }
+
+    formatMatchTime(elapsedSeconds) {
+        const totalSeconds = Math.floor(elapsedSeconds);
         const minutes = Math.floor(totalSeconds / 60);
         const seconds = totalSeconds % 60;
         return `${minutes}:${seconds < 10 ? `0${seconds}` : seconds}`;
