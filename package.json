@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "test": "mkdir -p .test-build && trap 'rm -rf .test-build' EXIT && esbuild test/KickController.test.js test/MatchKickFlow.test.js test/FootballCollisionHandler.test.js --bundle --platform=node --format=cjs --target=node7 --outdir=.test-build && node .test-build/KickController.test.js && node .test-build/MatchKickFlow.test.js && node .test-build/FootballCollisionHandler.test.js",
+    "test": "mkdir -p .test-build && trap 'rm -rf .test-build' EXIT && esbuild test/KickController.test.js test/MatchKickFlow.test.js test/FootballCollisionHandler.test.js test/MatchTimer.test.js test/BrowserGameHost.test.js --bundle --platform=node --format=cjs --target=node7 --outdir=.test-build && node .test-build/KickController.test.js && node .test-build/MatchKickFlow.test.js && node .test-build/FootballCollisionHandler.test.js && node .test-build/MatchTimer.test.js && node .test-build/BrowserGameHost.test.js",
     "build": "npm run build:game && npm run build:ball-possession",
     "build:game": "esbuild scripts/game.js --bundle --platform=browser --format=iife --outfile=game.bundle.js",
     "build:ball-possession": "esbuild scripts/ballPossession.js --bundle --platform=browser --format=iife --outfile=ballPossession.bundle.js",

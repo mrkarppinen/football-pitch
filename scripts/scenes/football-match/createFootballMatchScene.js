@@ -6,6 +6,8 @@ import Goal from '../../football/entities/Goal.js';
 import Pitch from '../../football/entities/Pitch.js';
 import createBoundaries from './createBoundaries.js';
 import createTeams from './createTeams.js';
+import MatchResultScene from './MatchResultScene.js';
+import { MATCH_DURATION_SECONDS } from './settings.js';
 
 const CANVAS_WIDTH = 1050;
 const CANVAS_HEIGHT = 680;
@@ -16,7 +18,9 @@ const FIELD = Object.freeze({
     height: 647.62
 });
 
-export default function createGame() {
+export default function createGame({
+    matchDurationSeconds = MATCH_DURATION_SECONDS
+} = {}) {
     const field = { ...FIELD, canvasWidth: CANVAS_WIDTH, canvasHeight: CANVAS_HEIGHT };
     const world = new GameWorld();
     const pitch = new Pitch(field.x, field.y, field.width, field.height);
@@ -63,6 +67,7 @@ export default function createGame() {
         homeTeam,
         awayTeam,
         ball,
+        durationSeconds: matchDurationSeconds,
         updateCollisions: () => world.updateCollisions()
     });
     const collisionHandler = new FootballCollisionHandler(match);
@@ -75,6 +80,8 @@ export default function createGame() {
         canvasHeight: CANVAS_HEIGHT,
         field,
         match,
+        resultScene: new MatchResultScene(CANVAS_WIDTH, CANVAS_HEIGHT, match),
+        restart: () => createGame({ matchDurationSeconds }),
         players,
         renderables: world.renderables,
         getDraggablePlayer(position) {

@@ -9,13 +9,17 @@ export default class BrowserGameHost {
         const canvas = document.getElementById('pitch');
         const ctx = canvas.getContext('2d');
         const statusElement = document.getElementById('match-status');
-        const scene = this.createScene();
-        const { canvasWidth, canvasHeight, match, renderables } = scene;
+        let scene = this.createScene();
+        const { canvasWidth, canvasHeight } = scene;
 
         const render = () => {
-            renderables.forEach(gameObject => gameObject.render(ctx));
-            if (statusElement.textContent !== match.statusText) {
-                statusElement.textContent = match.statusText;
+            if (scene.match.isFinished) {
+                scene.resultScene.render(ctx);
+            } else {
+                scene.renderables.forEach(gameObject => gameObject.render(ctx));
+            }
+            if (statusElement.textContent !== scene.match.statusText) {
+                statusElement.textContent = scene.match.statusText;
             }
         };
 
@@ -53,7 +57,9 @@ export default class BrowserGameHost {
             const position = getCanvasPosition(event);
             activePointer = {
                 id: event.pointerId,
-                player: scene.getDraggablePlayer?.(position) ?? null,
+                player: scene.match.isFinished
+                    ? null
+                    : scene.getDraggablePlayer?.(position) ?? null,
                 startX: position.x,
                 startY: position.y,
                 dragged: false
@@ -93,13 +99,30 @@ export default class BrowserGameHost {
         canvas.addEventListener('pointercancel', onPointerCancel);
 
         let previousTime = 0;
+        let kickWasPressed = false;
+        let suppressKickUntilRelease = false;
         let animationFrameId;
         let stopped = false;
         const gameLoop = timestamp => {
             if (stopped) return;
             const deltaTime = Math.min((timestamp - (previousTime || timestamp)) / 1000, 0.05);
             previousTime = timestamp;
-            match.update(deltaTime, input.getPlayerInput());
+            let playerInput = input.getPlayerInput();
+            const restartRequested = scene.match.isFinished &&
+                playerInput.kick &&
+                !kickWasPressed;
+            kickWasPressed = playerInput.kick;
+
+            if (restartRequested && scene.restart) {
+                scene = scene.restart();
+                activePointer = null;
+                suppressKickUntilRelease = true;
+            }
+            if (suppressKickUntilRelease) {
+                if (!playerInput.kick) suppressKickUntilRelease = false;
+                else playerInput = { ...playerInput, kick: false };
+            }
+            if (!scene.match.isFinished) scene.match.update(deltaTime, playerInput);
             render();
             animationFrameId = requestAnimationFrame(gameLoop);
         };

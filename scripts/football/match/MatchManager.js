@@ -20,7 +20,8 @@ export default class MatchManager {
         homeTeam,
         awayTeam,
         ball,
-        updateCollisions
+        updateCollisions,
+        durationSeconds
     }) {
         this.field = field;
         this.canvasWidth = canvasWidth;
@@ -31,6 +32,11 @@ export default class MatchManager {
         this.players = this.teams.flatMap(team => team.players);
         this.ball = ball;
         this.updateCollisions = updateCollisions;
+        if (!Number.isFinite(durationSeconds) || durationSeconds <= 0) {
+            throw new RangeError('Match duration must be a positive number of seconds');
+        }
+        this.durationSeconds = durationSeconds;
+        this.remainingTime = durationSeconds;
         this.stateManager = new MatchStateManager(MatchStates.KICK_OFF);
         this.kickController = new KickController(field);
         this.kickoffTeam = this.homeTeam;
@@ -66,9 +72,18 @@ export default class MatchManager {
 
 
     update(deltaTime, input) {
+        if (this.isFinished) return;
+
+        this.remainingTime = Math.max(0, this.remainingTime - Math.max(0, deltaTime));
+        if (this.remainingTime === 0) {
+            this.finishMatch();
+            return;
+        }
+
         if (this.currentState === MatchStates.GOAL_CELEBRATION) {
             this.celebrationRemaining -= deltaTime;
             if (this.celebrationRemaining <= 0) this.prepareKickOff();
+            this.statusText = this.getStatusText();
             return;
         }
 
@@ -413,6 +428,23 @@ export default class MatchManager {
         return this.restartManager.restartKicker;
     }
 
+    get isFinished() {
+        return this.currentState === MatchStates.FINISHED;
+    }
+
+    finishMatch() {
+        if (this.isFinished) return;
+        this.remainingTime = 0;
+        this.kickChargeTime = 0;
+        this.activeGoalkeeper = null;
+        this.players.forEach(player => {
+            player.hasBall = false;
+            player.kickSpeed = 0;
+        });
+        this.ball.velocity = { x: 0, y: 0 };
+        this.changeState(MatchStates.FINISHED);
+    }
+
     changeState(newState) {
         this.stateManager.transitionTo(newState);
         this.ball.setCanAcquirePossession(newState === MatchStates.MATCH_ON);
@@ -425,14 +457,19 @@ export default class MatchManager {
 
     getStatusText() {
         const score = `Home ${this.score.home} - ${this.score.away} Away`;
-        if (this.currentState === MatchStates.GOAL_CELEBRATION) return `${score} - GOAL!`;
+        if (this.isFinished) return `${score} - FULL TIME`;
+        const clock = this.formatRemainingTime();
+        const matchStatus = status => `${score} - ${clock} - ${status}`;
+        if (this.currentState === MatchStates.GOAL_CELEBRATION) {
+            return matchStatus('GOAL!');
+        }
         if (this.currentState === MatchStates.GOALKEEPER_POSSESSION) {
-            return `${score} - ${this.activeGoalkeeper.name} has the ball; opponents must leave the penalty area`;
+            return matchStatus(`${this.activeGoalkeeper.name} has the ball; opponents must leave the penalty area`);
         }
         if (this.currentState === MatchStates.KICK_OFF) {
             const player = this.getKickoffPlayer();
             const charge = Math.round((this.kickChargeTime / KICK_CHARGE_DURATION) * 100);
-            return `${score} - ${player.team.name} kick-off: ${player.name} — Left/Right to rotate, hold/release Space to kick (${charge}%)`;
+            return matchStatus(`${player.team.name} kick-off: ${player.name} — Left/Right to rotate, hold/release Space to kick (${charge}%)`);
         }
         if (this.isRestartState()) {
             const charge = Math.round((this.kickChargeTime / KICK_CHARGE_DURATION) * 100);
@@ -441,9 +478,16 @@ export default class MatchManager {
                 : this.currentState === MatchStates.CORNER_KICK
                     ? 'corner kick'
                     : 'goal kick';
-            return `${score} - ${this.restartKicker.team.name} ${restartLabel}: ${this.restartKicker.name} — Left/Right to rotate, hold/release Space to kick (${charge}%)`;
+            return matchStatus(`${this.restartKicker.team.name} ${restartLabel}: ${this.restartKicker.name} — Left/Right to rotate, hold/release Space to kick (${charge}%)`);
         }
-        return `${score} - Arrows: move/turn, S: sprint, Space: charge/release kick`;
+        return matchStatus('Arrows: move/turn, S: sprint, Space: charge/release kick');
+    }
+
+    formatRemainingTime() {
+        const totalSeconds = Math.ceil(this.remainingTime);
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+        return `${minutes}:${seconds < 10 ? `0${seconds}` : seconds}`;
     }
 
 }

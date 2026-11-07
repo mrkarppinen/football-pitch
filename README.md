@@ -19,6 +19,7 @@ Then open [http://localhost:3000/game.html](http://localhost:3000/game.html).
 - S: sprint while moving forward
 - Q: show or hide each field player's defensive area
 - Space: hold to charge a kick, then release; at kick-off or any restart this starts play
+- At full time, the result screen shows the score; press Space to start a new match
 - Click a home player to give them the ball; drag home players to reposition them
 - Only one home player is keyboard-controlled at a time; control follows possession or the home player (including the goalkeeper) closest to the free ball
 - Away players are AI-controlled. AI ball carriers attempt a kick with a 40% chance per second, aiming 45% toward the opposing goal, 40% toward a teammate, or 15% toward their goalkeeper; goalkeepers clear toward a teammate or the opposing goal
@@ -42,6 +43,8 @@ Each `AreaDefendingTeam` extends `Team` with a defensive-area radius and assigns
 
 `MatchManager` coordinates match updates, while `KickController` owns human charge progression and AI kick chance/aiming, `MatchRestartManager` owns restart setup, and `MatchStateManager` validates state transitions. Human kick charge is capped at its configured duration. AI kick chance is calculated per update from a per-second probability, so it remains stable across frame rates. Goalkeeper clearance passes its intended speed into `KickController.aim` rather than overwriting the maximum shot speed afterward.
 
+The match clock defaults to 90 seconds and can be changed through `MATCH_DURATION_SECONDS` in `scripts/scenes/football-match/settings.js`, or overridden when creating a scene with `createGame({ matchDurationSeconds })`. When time expires, play stops and `MatchResultScene` renders the score and outcome; Space starts a fresh match with the same configured duration.
+
 The collision-test scene in `scripts/scenes/ball-possession/createBallPossession.js` has one human-controlled Home player and one Away player holding the ball. Run `npm run build` and open [http://localhost:3000/testCollision.html](http://localhost:3000/testCollision.html) to try it.
 
-Run the kick and goalkeeper regression tests with `npm test`.
+Run the kick, goalkeeper, and match timer regression tests with `npm test`.
