@@ -1,10 +1,18 @@
 import Player from './Player.js';
 import HumanController from '../controllers/HumanController.js';
 
-const GOALKEEPER_SPEED = 60;
+const DEFAULT_GOALKEEPER_SPEED = 60;
 
 export default class Goalkeeper extends Player {
-    constructor({ id, name, team, goalSide, field, goalMouthHeight }) {
+    constructor({
+        id,
+        name,
+        team,
+        goalSide,
+        field,
+        goalMouthHeight,
+        speed = DEFAULT_GOALKEEPER_SPEED
+    }) {
         const goalLineX = goalSide === 'left' ? field.x : field.x + field.width;
         const centerY = field.y + field.height / 2;
         super({
@@ -15,7 +23,7 @@ export default class Goalkeeper extends Player {
             x: goalSide === 'left' ? goalLineX + 24 : goalLineX - 24,
             y: centerY,
             direction: { x: goalSide === 'left' ? 1 : -1, y: 0 },
-            speed: GOALKEEPER_SPEED,
+            speed,
             radius: 10
         });
         this.isGoalkeeper = true;
@@ -53,7 +61,7 @@ export default class Goalkeeper extends Player {
         const differenceY = targetY - this.y;
         this.y += Math.sign(differenceY) * Math.min(
             Math.abs(differenceY),
-            GOALKEEPER_SPEED * deltaTime
+            this.speed * deltaTime
         );
     }
 }

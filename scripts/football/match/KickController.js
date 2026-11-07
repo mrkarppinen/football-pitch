@@ -5,14 +5,17 @@ const MIN_KICK_SPEED = 220;
 export const KICK_CHARGE_DURATION = 0.5;
 
 export default class KickController {
-    constructor(field) {
+    constructor(field, { goalMouthAimFractions = [0.2, 0.8] } = {}) {
         this.field = field;
+        this.goalMouthAimFractions = goalMouthAimFractions;
     }
 
     chargeHumanKick(player, currentChargeTime, deltaTime) {
         const chargeTime = Math.min(KICK_CHARGE_DURATION, currentChargeTime + deltaTime);
         player.kickSpeed = MIN_KICK_SPEED +
             (MAX_KICK_SPEED - MIN_KICK_SPEED) * (chargeTime / KICK_CHARGE_DURATION);
+        player.isChargingKick = true;
+        player.kickChargeProgress = chargeTime / KICK_CHARGE_DURATION;
         return chargeTime;
     }
 
@@ -27,7 +30,7 @@ export default class KickController {
 
     aim(player, kickSpeed = MAX_KICK_SPEED) {
         const choices = [
-            { weight: 0.45, target: this.getOpponentGoalTarget(player.team) },
+            { weight: 0.45, target: this.getRandomOpponentGoalTarget(player.team) },
             { weight: 0.4, target: this.getTeammateTarget(player) },
             { weight: 0.15, target: this.getGoalkeeperTarget(player) }
         ].filter(choice => choice.target);
@@ -49,6 +52,17 @@ export default class KickController {
             x: team.attacksRight ? this.field.x + this.field.width : this.field.x,
             y: this.field.y + this.field.height / 2
         };
+    }
+
+    getRandomOpponentGoalTarget(team) {
+        const fractionIndex = Math.floor(
+            Math.random() * this.goalMouthAimFractions.length
+        );
+        const target = this.getOpponentGoalTarget(team);
+        const goalMouthHeight = this.field.width * 7.32 / 105;
+        target.y = target.y - goalMouthHeight / 2 +
+            goalMouthHeight * this.goalMouthAimFractions[fractionIndex];
+        return target;
     }
 
     getTeammateTarget(player) {

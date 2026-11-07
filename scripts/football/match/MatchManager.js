@@ -21,7 +21,8 @@ export default class MatchManager {
         awayTeam,
         ball,
         updateCollisions,
-        durationSeconds
+        durationSeconds,
+        goalMouthAimFractions
     }) {
         this.field = field;
         this.canvasWidth = canvasWidth;
@@ -38,7 +39,7 @@ export default class MatchManager {
         this.durationSeconds = durationSeconds;
         this.remainingTime = durationSeconds;
         this.stateManager = new MatchStateManager(MatchStates.KICK_OFF);
-        this.kickController = new KickController(field);
+        this.kickController = new KickController(field, { goalMouthAimFractions });
         this.kickoffTeam = this.homeTeam;
         this.score = { home: 0, away: 0 };
         this.kickChargeTime = 0;
@@ -409,6 +410,8 @@ export default class MatchManager {
         this.players.forEach(player => {
             player.hasBall = false;
             player.kickSpeed = 0;
+            player.isChargingKick = false;
+            player.kickChargeProgress = 0;
         });
         this.activeGoalkeeper = null;
         this.ball.velocity = { x: 0, y: 0 };

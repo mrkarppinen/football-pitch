@@ -31,6 +31,8 @@ export default class Player extends GameObject {
         this.energy = 100;
         this.exhausted = false;
         this.kickSpeed = 0;
+        this.isChargingKick = false;
+        this.kickChargeProgress = 0;
         this.previousPosition = { x, y };
         this.initialPosition = { x, y, direction: { ...direction } };
         this.controller = new Controller(this);
@@ -94,6 +96,8 @@ export default class Player extends GameObject {
         };
         this.hasBall = false;
         this.kickSpeed = 0;
+        this.isChargingKick = false;
+        this.kickChargeProgress = 0;
     }
 
     onCollide(other) {

@@ -16,6 +16,8 @@ test('human kick charging scales from minimum to maximum and caps at full charge
 
     assert.equal(controller.chargeHumanKick(player, 0, 0), 0);
     assert.equal(player.kickSpeed, 220);
+    assert.strictEqual(player.isChargingKick, true);
+    assert.strictEqual(player.kickChargeProgress, 0);
 
     const halfCharge = controller.chargeHumanKick(player, 0, KICK_CHARGE_DURATION / 2);
     assert.equal(halfCharge, KICK_CHARGE_DURATION / 2);
@@ -24,6 +26,7 @@ test('human kick charging scales from minimum to maximum and caps at full charge
     const fullCharge = controller.chargeHumanKick(player, halfCharge, 1);
     assert.equal(fullCharge, KICK_CHARGE_DURATION);
     assert.equal(player.kickSpeed, 700);
+    assert.strictEqual(player.kickChargeProgress, 1);
 });
 
 test('AI kick chance is zero for a zero-duration update', () => {
@@ -87,4 +90,25 @@ test('AI aiming accepts an explicit clearance speed', () => {
 
     assert.strictEqual(player.kickSpeed, 450);
     assert.ok(player.direction.x > 0);
+});
+
+test('AI goal targets alternate between the upper and lower parts of the goal', () => {
+    const controller = new KickController(field);
+    const team = { attacksRight: true };
+    const originalRandom = Math.random;
+
+    try {
+        Math.random = () => 0;
+        const upperTarget = controller.getRandomOpponentGoalTarget(team);
+        Math.random = () => 0.99;
+        const lowerTarget = controller.getRandomOpponentGoalTarget(team);
+
+        const goalMouthHeight = field.width * 7.32 / 105;
+        assert.ok(Math.abs(upperTarget.y - (300 - goalMouthHeight * 0.3)) < 1e-9);
+        assert.ok(Math.abs(lowerTarget.y - (300 + goalMouthHeight * 0.3)) < 1e-9);
+        assert.strictEqual(upperTarget.x, field.width);
+        assert.strictEqual(lowerTarget.x, field.width);
+    } finally {
+        Math.random = originalRandom;
+    }
 });

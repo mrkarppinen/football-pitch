@@ -39,7 +39,7 @@ const TEAM_CONFIGS = [
     }
 ];
 
-export default function createTeams(field) {
+export default function createTeams(field, { goalkeeperSpeed } = {}) {
     const goalMouthHeight = field.width * 7.32 / 105;
     return TEAM_CONFIGS.map(config => {
         const { roster, goalkeeperId, goalkeeperGoalSide, ...teamOptions } = config;
@@ -59,7 +59,8 @@ export default function createTeams(field) {
             team,
             goalSide: goalkeeperGoalSide,
             field,
-            goalMouthHeight
+            goalMouthHeight,
+            speed: goalkeeperSpeed
         }));
         team.players.forEach(player => {
             player.controller = new AiController(player);

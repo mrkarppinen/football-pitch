@@ -157,6 +157,26 @@ export default class CanvasDraw {
         ctx.fillRect(player.x - 12, player.y - 17, 24, 3);
         ctx.fillStyle = player.energy > 25 ? '#39ff14' : '#ff4b4b';
         ctx.fillRect(player.x - 12, player.y - 17, 24 * (player.energy / 100), 3);
+
+        if (player.isChargingKick) {
+            const directionX = player.direction.x / directionLength;
+            const directionY = player.direction.y / directionLength;
+            const chargeBarX = player.x - directionX * (player.radius + 6) - 2;
+            const chargeBarY = player.y - directionY * (player.radius + 6) - 12;
+            const chargeBarHeight = 24;
+            const chargeProgress = Math.max(0, Math.min(1, player.kickChargeProgress));
+            const filledHeight = chargeBarHeight * chargeProgress;
+
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
+            ctx.fillRect(chargeBarX, chargeBarY, 4, chargeBarHeight);
+            ctx.fillStyle = '#39ff14';
+            ctx.fillRect(
+                chargeBarX,
+                chargeBarY + chargeBarHeight - filledHeight,
+                4,
+                filledHeight
+            );
+        }
     }
 
     static drawBall(ctx, ball) {

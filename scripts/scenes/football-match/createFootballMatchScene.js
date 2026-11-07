@@ -7,7 +7,11 @@ import Pitch from '../../football/entities/Pitch.js';
 import createBoundaries from './createBoundaries.js';
 import createTeams from './createTeams.js';
 import MatchResultScene from './MatchResultScene.js';
-import { MATCH_DURATION_SECONDS } from './settings.js';
+import {
+    AI_GOALKEEPER_SPEED,
+    GOAL_MOUTH_AIM_FRACTIONS,
+    MATCH_DURATION_SECONDS
+} from './settings.js';
 
 const CANVAS_WIDTH = 1050;
 const CANVAS_HEIGHT = 680;
@@ -24,7 +28,7 @@ export default function createGame({
     const field = { ...FIELD, canvasWidth: CANVAS_WIDTH, canvasHeight: CANVAS_HEIGHT };
     const world = new GameWorld();
     const pitch = new Pitch(field.x, field.y, field.width, field.height);
-    const teams = createTeams(field);
+    const teams = createTeams(field, { goalkeeperSpeed: AI_GOALKEEPER_SPEED });
     const [homeTeam, awayTeam] = teams;
     const players = teams.flatMap(team => team.players);
 
@@ -68,6 +72,7 @@ export default function createGame({
         awayTeam,
         ball,
         durationSeconds: matchDurationSeconds,
+        goalMouthAimFractions: GOAL_MOUTH_AIM_FRACTIONS,
         updateCollisions: () => world.updateCollisions()
     });
     const collisionHandler = new FootballCollisionHandler(match);

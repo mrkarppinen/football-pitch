@@ -45,6 +45,8 @@ Each `AreaDefendingTeam` extends `Team` with a defensive-area radius and assigns
 
 The match clock defaults to 90 seconds and can be changed through `MATCH_DURATION_SECONDS` in `scripts/scenes/football-match/settings.js`, or overridden when creating a scene with `createGame({ matchDurationSeconds })`. When time expires, play stops and `MatchResultScene` renders the score and outcome; Space starts a fresh match with the same configured duration.
 
+AI goalkeeper speed and goal-shot target heights are configured by `AI_GOALKEEPER_SPEED` and `GOAL_MOUTH_AIM_FRACTIONS` in the same settings module. Human kick charge duration is unchanged; while charging, a vertical bar appears behind the player and fills from bottom to top.
+
 The collision-test scene in `scripts/scenes/ball-possession/createBallPossession.js` has one human-controlled Home player and one Away player holding the ball. Run `npm run build` and open [http://localhost:3000/testCollision.html](http://localhost:3000/testCollision.html) to try it.
 
 Run the kick, goalkeeper, and match timer regression tests with `npm test`.
