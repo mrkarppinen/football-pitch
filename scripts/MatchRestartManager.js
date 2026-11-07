@@ -143,7 +143,7 @@ export default class MatchRestartManager {
         kickoffPlayer.x = this.field.x + this.field.width / 2;
         kickoffPlayer.y = this.field.y + this.field.height / 2;
         kickoffPlayer.previousPosition = { x: kickoffPlayer.x, y: kickoffPlayer.y };
-        kickoffPlayer.direction = { x: kickoffPlayer.team.attacksRight ? 1 : -1, y: 0 };
+        kickoffPlayer.direction = { x: kickoffPlayer.team.attacksRight ? -1 : 1, y: 0 };
         kickoffPlayer.hasBall = true;
         this.attachBallTo(kickoffPlayer);
         this.ball.velocity = { x: 0, y: 0 };

@@ -16,13 +16,16 @@ export default class AiController extends Controller {
         if (!context.input.run) player.exhausted = false;
 
         if (distance > 1) {
-            player.direction = { x: deltaX / distance, y: deltaY / distance };
+            const movementDirection = player.hasBall
+                ? player.direction
+                : { x: deltaX / distance, y: deltaY / distance };
+            if (!player.hasBall) player.direction = movementDirection;
             const speed = player.state.targetKey === 'ball'
                 ? player.speed * 1.2
                 : player.speed;
             player.move(
-                player.direction.x,
-                player.direction.y,
+                movementDirection.x,
+                movementDirection.y,
                 speed,
                 deltaTime,
                 context.field
