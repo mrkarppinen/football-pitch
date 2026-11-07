@@ -1,10 +1,11 @@
-import CollisionSystem from './CollisionSystem.js';
-import Controller from './controllers/Controller.js';
-import HumanController from './controllers/HumanController.js';
-import Team, { TeamModes } from './Team.js';
-import Ball from './gameobjects/Ball.js';
-import Pitch from './gameobjects/Pitch.js';
-import Player from './gameobjects/Player.js';
+import CollisionSystem from '../../core/collision/CollisionSystem.js';
+import Controller from '../../football/controllers/Controller.js';
+import HumanController from '../../football/controllers/HumanController.js';
+import FootballCollisionHandler from '../../football/match/FootballCollisionHandler.js';
+import Team, { TeamModes } from '../../football/teams/Team.js';
+import Ball from '../../football/entities/Ball.js';
+import Pitch from '../../football/entities/Pitch.js';
+import Player from '../../football/entities/Player.js';
 
 const CANVAS_WIDTH = 1050;
 const CANVAS_HEIGHT = 680;
@@ -92,9 +93,10 @@ export default function createBallPossession() {
         }
     };
 
-    [...teams, ...players, ball].forEach(entity => {
-        entity.match = match;
-    });
+    const collisionHandler = new FootballCollisionHandler(match);
+    collisionSystem.addCollisionListener((entityA, entityB) =>
+        collisionHandler.handle(entityA, entityB)
+    );
 
     return {
         canvasWidth: CANVAS_WIDTH,
@@ -102,6 +104,26 @@ export default function createBallPossession() {
         field,
         match,
         players,
-        renderables: [pitch, ...teams, ball]
+        renderables: [pitch, ...teams, ball],
+        getDraggablePlayer(position) {
+            return players.find(player =>
+                player.team === homeTeam &&
+                Math.hypot(player.x - position.x, player.y - position.y) <= player.radius + 4
+            ) ?? null;
+        },
+        movePlayer(player, position) {
+            player.x = Math.max(field.x + player.radius, Math.min(
+                field.x + field.width - player.radius,
+                position.x
+            ));
+            player.y = Math.max(field.y + player.radius, Math.min(
+                field.y + field.height - player.radius,
+                position.y
+            ));
+            player.previousPosition = { x: player.x, y: player.y };
+        },
+        selectPlayer(player) {
+            match.setPossession(player);
+        }
     };
 }

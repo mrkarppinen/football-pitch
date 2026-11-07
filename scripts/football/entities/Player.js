@@ -1,6 +1,6 @@
 import { GameObjectType } from './GameObjectType.js';
 import GameObject from './GameObject.js';
-import CanvasDraw from '../CanvasDraw.js';
+import CanvasDraw from '../rendering/CanvasDraw.js';
 import Controller from '../controllers/Controller.js';
 import { PlayerStates } from '../controllers/PlayerStates.js';
 

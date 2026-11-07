@@ -1,6 +1,6 @@
 import Team from './Team.js';
-import AiController from './controllers/AiController.js';
-import { PlayerStates } from './controllers/PlayerStates.js';
+import AiController from '../controllers/AiController.js';
+import { PlayerStates } from '../controllers/PlayerStates.js';
 
 export default class AreaDefendingTeam extends Team {
     constructor(options, { defendAreaRadius = 140 } = {}) {

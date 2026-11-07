@@ -1,6 +1,6 @@
 import { GameObjectType } from './GameObjectType.js';
 import GameObject from './GameObject.js';
-import CanvasDraw from '../CanvasDraw.js';
+import CanvasDraw from '../rendering/CanvasDraw.js';
 
 const PICKUP_GRACE_PERIOD = 0.35;
 const POSSESSION_GRACE_PERIOD = 2;
@@ -107,14 +107,6 @@ export default class Ball extends GameObject {
         this.x = player.x + player.direction.x * 12;
         this.y = player.y + player.direction.y * 12;
         this.previousPosition = { x: this.x, y: this.y };
-    }
-
-    onCollide(other) {
-        if (other.type === GameObjectType.PLAYER) {
-            this.match.tryAcquirePossession(other);
-        } else if (other.type === GameObjectType.GOAL_POST) {
-            this.reflectFromPost(other);
-        }
     }
 
     reflectFromPost(post) {

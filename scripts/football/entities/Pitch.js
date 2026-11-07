@@ -1,4 +1,4 @@
-import CanvasDraw from '../CanvasDraw.js';
+import CanvasDraw from '../rendering/CanvasDraw.js';
 import GameObject from './GameObject.js';
 
 export default class Pitch extends GameObject {

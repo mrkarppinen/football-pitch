@@ -4,6 +4,7 @@ export default class CollisionSystem {
     constructor(detector = new CollisionDetector()) {
         this.entities = [];
         this.detector = detector;
+        this.collisionListeners = new Set();
     }
 
     register(entity) {
@@ -12,6 +13,11 @@ export default class CollisionSystem {
 
     unregister(entity) {
         this.entities = this.entities.filter(candidate => candidate !== entity);
+    }
+
+    addCollisionListener(listener) {
+        this.collisionListeners.add(listener);
+        return () => this.collisionListeners.delete(listener);
     }
 
     update() {
@@ -28,6 +34,9 @@ export default class CollisionSystem {
                 ) {
                     if (aCollidesWithB) entityA.onCollide(entityB);
                     if (bCollidesWithA) entityB.onCollide(entityA);
+                    this.collisionListeners.forEach(listener =>
+                        listener(entityA, entityB)
+                    );
                 }
             }
         }

@@ -1,9 +1,9 @@
-import AiController from './controllers/AiController.js';
-import HumanController from './controllers/HumanController.js';
+import AiController from '../controllers/AiController.js';
+import HumanController from '../controllers/HumanController.js';
 import KickController, { KICK_CHARGE_DURATION } from './KickController.js';
 import MatchRestartManager from './MatchRestartManager.js';
 import MatchStateManager, { MatchStates } from './MatchStateManager.js';
-import { TeamModes } from './Team.js';
+import { TeamModes } from '../teams/Team.js';
 
 export { MatchStates };
 
@@ -245,11 +245,7 @@ export default class MatchManager {
         }
 
         if (opponentsCleared) {
-            this.kickController.aim(goalkeeper);
-            goalkeeper.kickSpeed = Math.max(
-                goalkeeper.kickSpeed,
-                GOALKEEPER_CLEARANCE_SPEED
-            );
+            this.kickController.aim(goalkeeper, GOALKEEPER_CLEARANCE_SPEED);
             this.activeGoalkeeper = null;
             this.releaseKick(goalkeeper, { selectTeammate: false });
             this.changeState(MatchStates.MATCH_ON);

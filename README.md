@@ -30,10 +30,18 @@ Then open [http://localhost:3000/game.html](http://localhost:3000/game.html).
 
 Each `AreaDefendingTeam` extends `Team` with a defensive-area radius and assigns AI field players to chase the ball, support the play, or maintain a formation position. AI ball carriers attack the opposing goal. Each side has five field players and one goalkeeper, with three `defence` roles and two `attack` roles.
 
-`Team` is a game object that updates and renders its own roster. Player and ball drawing is centralized in `scripts/CanvasDraw.js`; the collision system still registers individual players so it can resolve contacts between them.
+## Code organization
 
-`scripts/createGame.js` is the composition root: team rosters and boundaries come from focused factories, while `GameWorld` keeps entity, renderable, and collidable registrations together. Register new entities with the appropriate `GameWorld.register` flags so they participate in rendering and/or collision handling. `CollisionDetector` handles shape tests; `CollisionSystem` finds collidable pairs and dispatches collision callbacks, while game objects retain their domain-specific collision response.
+- `scripts/core/` contains reusable world registration and collision detection/dispatch.
+- `scripts/platform/browser/` owns DOM, canvas, resize, keyboard, and pointer handling. The browser host delegates selection and dragging to scene callbacks instead of deciding football rules.
+- `scripts/football/` contains football entities, teams, controllers, match/restart state, kick rules, football collision handling, and football rendering.
+- `scripts/scenes/` contains scene factories and configuration. `football-match/createFootballMatchScene.js` is the main composition root; it creates the world and football objects, then wires the match-specific collision handler to the generic collision system.
+- `scripts/game.js` and `scripts/ballPossession.js` are browser bundle entry points.
 
-`MatchManager` coordinates gameplay and delegates human kick charging and AI aim/shot decisions to `KickController`, and kickoff/restart setup to `MatchRestartManager`. `MatchStateManager` remains the authority for valid match-state transitions; its transition table and validation are already a single, cohesive responsibility, so splitting or folding it into `MatchManager` would weaken that boundary. The ball owns pickup permission, grace periods, and possession attachment; match-state changes configure whether it can be acquired, while `MatchManager` applies team/controller effects after a successful pickup. `scripts/game.js` handles browser rendering, input, and the animation loop.
+`GameWorld` maintains entity, renderable, and collidable registrations. `CollisionDetector` handles shape tests, and `CollisionSystem` finds colliding pairs and notifies listeners. The football scene wires `FootballCollisionHandler` to translate those generic collision events into match actions; entities no longer hold a back-reference to the match. Player-to-player physical responses and ball-to-post reflection remain on the affected entities.
 
-`scripts/createBallPossession.js` provides a minimal collision-test setup with one human-controlled Home player and one Away player holding the ball. Run `npm run build` and open [http://localhost:3000/testCollision.html](http://localhost:3000/testCollision.html) to try the scene; `scripts/ballPossession.js` is its browser entry point.
+`MatchManager` coordinates match updates, while `KickController` owns human charge progression and AI kick chance/aiming, `MatchRestartManager` owns restart setup, and `MatchStateManager` validates state transitions. Human kick charge is capped at its configured duration. AI kick chance is calculated per update from a per-second probability, so it remains stable across frame rates. Goalkeeper clearance passes its intended speed into `KickController.aim` rather than overwriting the maximum shot speed afterward.
+
+The collision-test scene in `scripts/scenes/ball-possession/createBallPossession.js` has one human-controlled Home player and one Away player holding the ball. Run `npm run build` and open [http://localhost:3000/testCollision.html](http://localhost:3000/testCollision.html) to try it.
+
+Run the kick and goalkeeper regression tests with `npm test`.

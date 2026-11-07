@@ -25,7 +25,7 @@ export default class KickController {
         return true;
     }
 
-    aim(player) {
+    aim(player, kickSpeed = MAX_KICK_SPEED) {
         const choices = [
             { weight: 0.45, target: this.getOpponentGoalTarget(player.team) },
             { weight: 0.4, target: this.getTeammateTarget(player) },
@@ -41,7 +41,7 @@ export default class KickController {
         const deltaY = choice.target.y - player.y;
         const distance = Math.hypot(deltaX, deltaY) || 1;
         player.direction = { x: deltaX / distance, y: deltaY / distance };
-        player.kickSpeed = MAX_KICK_SPEED;
+        player.kickSpeed = kickSpeed;
     }
 
     getOpponentGoalTarget(team) {

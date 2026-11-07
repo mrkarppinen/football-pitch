@@ -1,11 +1,10 @@
-import CollisionSystem from './CollisionSystem.js';
+import CollisionSystem from './collision/CollisionSystem.js';
 
 export default class GameWorld {
     constructor(collisionSystem = new CollisionSystem()) {
         this.collisionSystem = collisionSystem;
         this.entities = [];
         this.renderables = [];
-        this.match = null;
     }
 
     register(entity, { renderable = false, collidable = false } = {}) {
@@ -14,7 +13,6 @@ export default class GameWorld {
             this.renderables.push(entity);
         }
         if (collidable) this.registerCollider(entity);
-        if (this.match) entity.match = this.match;
         return entity;
     }
 
@@ -28,14 +26,6 @@ export default class GameWorld {
         this.entities = this.entities.filter(candidate => candidate !== entity);
         this.renderables = this.renderables.filter(candidate => candidate !== entity);
         this.collisionSystem.unregister(entity);
-        if (entity.match === this.match) entity.match = null;
-    }
-
-    setMatch(match) {
-        this.match = match;
-        this.entities.forEach(entity => {
-            entity.match = match;
-        });
     }
 
     updateCollisions() {

@@ -13,9 +13,4 @@ export default class Sideline extends GameObject {
         this.collisionMaskType = 'rect';
     }
 
-    onCollide(other) {
-        if (other.type === GameObjectType.BALL || other.hasBall) {
-            this.match.startSidelineKick(this.side);
-        }
-    }
 }

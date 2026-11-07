@@ -1,5 +1,5 @@
-import GameObject from './gameobjects/GameObject.js';
-import { GameObjectType } from './gameobjects/GameObjectType.js';
+import GameObject from '../entities/GameObject.js';
+import { GameObjectType } from '../entities/GameObjectType.js';
 
 export const TeamModes = {
     DEFENCE: 'defence',

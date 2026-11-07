@@ -1,8 +1,8 @@
-import AreaDefendingTeam from './AreaDefendingTeam.js';
-import AiController from './controllers/AiController.js';
-import { TeamModes } from './Team.js';
-import AreaPlayer from './gameobjects/AreaPlayer.js';
-import Goalkeeper from './gameobjects/Goalkeeper.js';
+import AreaDefendingTeam from '../../football/teams/AreaDefendingTeam.js';
+import AiController from '../../football/controllers/AiController.js';
+import { TeamModes } from '../../football/teams/Team.js';
+import AreaPlayer from '../../football/entities/AreaPlayer.js';
+import Goalkeeper from '../../football/entities/Goalkeeper.js';
 
 const TEAM_CONFIGS = [
     {

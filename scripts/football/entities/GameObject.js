@@ -6,7 +6,6 @@ export default class GameObject {
         this.type = type;
         this.collidesWith = collidesWith;
         this.collisionMaskType = 'circle';
-        this.match = null;
     }
 
     canCollideWith(otherEntity) {

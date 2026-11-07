@@ -1,8 +1,9 @@
-import GameWorld from './GameWorld.js';
-import MatchManager from './MatchManager.js';
-import Ball from './gameobjects/Ball.js';
-import Goal from './gameobjects/Goal.js';
-import Pitch from './gameobjects/Pitch.js';
+import GameWorld from '../../core/GameWorld.js';
+import MatchManager from '../../football/match/MatchManager.js';
+import FootballCollisionHandler from '../../football/match/FootballCollisionHandler.js';
+import Ball from '../../football/entities/Ball.js';
+import Goal from '../../football/entities/Goal.js';
+import Pitch from '../../football/entities/Pitch.js';
 import createBoundaries from './createBoundaries.js';
 import createTeams from './createTeams.js';
 
@@ -64,7 +65,10 @@ export default function createGame() {
         ball,
         updateCollisions: () => world.updateCollisions()
     });
-    world.setMatch(match);
+    const collisionHandler = new FootballCollisionHandler(match);
+    world.collisionSystem.addCollisionListener((entityA, entityB) =>
+        collisionHandler.handle(entityA, entityB)
+    );
 
     return {
         canvasWidth: CANVAS_WIDTH,
@@ -72,6 +76,26 @@ export default function createGame() {
         field,
         match,
         players,
-        renderables: world.renderables
+        renderables: world.renderables,
+        getDraggablePlayer(position) {
+            return players.find(player =>
+                player.team === homeTeam &&
+                Math.hypot(player.x - position.x, player.y - position.y) <= player.radius + 4
+            ) ?? null;
+        },
+        movePlayer(player, position) {
+            player.x = Math.max(field.x + player.radius, Math.min(
+                field.x + field.width - player.radius,
+                position.x
+            ));
+            player.y = Math.max(field.y + player.radius, Math.min(
+                field.y + field.height - player.radius,
+                position.y
+            ));
+            player.previousPosition = { x: player.x, y: player.y };
+        },
+        selectPlayer(player) {
+            match.setPossession(player);
+        }
     };
 }

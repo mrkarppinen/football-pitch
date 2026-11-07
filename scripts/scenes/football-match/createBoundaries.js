@@ -1,6 +1,6 @@
-import Endline from './gameobjects/Endline.js';
-import GoalPost from './gameobjects/GoalPost.js';
-import Sideline from './gameobjects/Sideline.js';
+import Endline from '../../football/entities/Endline.js';
+import GoalPost from '../../football/entities/GoalPost.js';
+import Sideline from '../../football/entities/Sideline.js';
 
 export default function createBoundaries(field, canvasWidth, canvasHeight) {
     const goalHalfHeight = field.width * 7.32 / 105 / 2;

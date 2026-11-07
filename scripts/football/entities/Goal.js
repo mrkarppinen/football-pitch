@@ -1,7 +1,7 @@
 
 import GameObject from './GameObject.js';
 import { GameObjectType } from './GameObjectType.js';
-import CanvasDraw from '../CanvasDraw.js';
+import CanvasDraw from '../rendering/CanvasDraw.js';
 
 export default class Goal extends GameObject {
     constructor(x, y, width, height, ballRadius = 5, goalSide = 'left') {
@@ -22,7 +22,4 @@ export default class Goal extends GameObject {
         CanvasDraw.drawGoal(ctx, this.x, this.y, this.width, this.height);
     }
 
-    onCollide(other) {
-        if (other.type === GameObjectType.BALL) this.match.scoreGoal(this);
-    }
 }

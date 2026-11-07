@@ -1,6 +1,9 @@
 export default class CollisionDetector {
     checkCollision(entityA, entityB) {
-        if (entityA.collisionMaskType === 'circle' && entityB.collisionMaskType === 'circle') {
+        if (
+            entityA.collisionMaskType === 'circle' &&
+            entityB.collisionMaskType === 'circle'
+        ) {
             return this.checkCircleCircle(entityA, entityB);
         }
         if (entityA.collisionMaskType === 'circle' && entityB.collisionMaskType === 'rect') {

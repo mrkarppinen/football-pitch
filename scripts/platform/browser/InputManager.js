@@ -3,7 +3,7 @@ export default class InputManager {
     constructor() {
         this.keys = {};
         this.defendAreaVisible = false;
-        window.addEventListener('keydown', (event) => {
+        this.onKeyDown = event => {
             if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space', 'KeyQ'].includes(event.code)) {
                 event.preventDefault();
             }
@@ -11,13 +11,16 @@ export default class InputManager {
                 this.defendAreaVisible = !this.defendAreaVisible;
             }
             this.keys[event.code] = true;
-        });
-        window.addEventListener('keyup', (event) => {
+        };
+        this.onKeyUp = event => {
             this.keys[event.code] = false;
-        });
-        window.addEventListener('blur', () => {
+        };
+        this.onBlur = () => {
             this.keys = {};
-        });
+        };
+        window.addEventListener('keydown', this.onKeyDown);
+        window.addEventListener('keyup', this.onKeyUp);
+        window.addEventListener('blur', this.onBlur);
     }
 
     isPressed(code) {
@@ -32,5 +35,11 @@ export default class InputManager {
             kick: this.isPressed('Space'),
             showDefendArea: this.defendAreaVisible
         };
+    }
+
+    dispose() {
+        window.removeEventListener('keydown', this.onKeyDown);
+        window.removeEventListener('keyup', this.onKeyUp);
+        window.removeEventListener('blur', this.onBlur);
     }
 }
