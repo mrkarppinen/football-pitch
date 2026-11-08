@@ -1,4 +1,5 @@
 import GameWorld from '../../core/GameWorld.js';
+import PlayerBallCollisionHandler from '../../football/collision/PlayerBallCollisionHandler.js';
 import MatchManager from '../../football/match/MatchManager.js';
 import FootballCollisionHandler from '../../football/match/FootballCollisionHandler.js';
 import Ball from '../../football/entities/Ball.js';
@@ -75,10 +76,15 @@ export default function createGame({
         goalMouthAimFractions: GOAL_MOUTH_AIM_FRACTIONS,
         updateCollisions: () => world.updateCollisions()
     });
-    const collisionHandler = new FootballCollisionHandler(match);
-    world.collisionSystem.addCollisionListener((entityA, entityB) =>
-        collisionHandler.handle(entityA, entityB)
+    const playerBallCollisionHandler = new PlayerBallCollisionHandler(
+        players,
+        player => match.onPossessionAcquired(player)
     );
+    const collisionHandler = new FootballCollisionHandler(match);
+    world.collisionSystem.addCollisionListener((entityA, entityB) => {
+        playerBallCollisionHandler.handle(entityA, entityB);
+        collisionHandler.handle(entityA, entityB);
+    });
 
     return {
         canvasWidth: CANVAS_WIDTH,

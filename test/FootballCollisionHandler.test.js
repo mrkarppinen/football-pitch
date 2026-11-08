@@ -16,15 +16,6 @@ function test(name, run) {
     console.log(`ok - ${name}`);
 }
 
-test('ball-player contacts delegate possession to the match', () => {
-    const player = { type: GameObjectType.PLAYER };
-    const ball = { type: GameObjectType.BALL };
-
-    handler.handle(ball, player);
-
-    assert.deepEqual(calls.pop(), ['possession', player]);
-});
-
 test('ball-goal contacts delegate scoring to the match', () => {
     const goal = { type: GameObjectType.GOAL };
     const ball = { type: GameObjectType.BALL };

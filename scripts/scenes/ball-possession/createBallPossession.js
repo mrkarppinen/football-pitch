@@ -1,7 +1,7 @@
 import CollisionSystem from '../../core/collision/CollisionSystem.js';
-import Controller from '../../football/controllers/Controller.js';
+import PlayerBallCollisionHandler from '../../football/collision/PlayerBallCollisionHandler.js';
+import KickController from '../../football/match/KickController.js';
 import HumanController from '../../football/controllers/HumanController.js';
-import FootballCollisionHandler from '../../football/match/FootballCollisionHandler.js';
 import Team, { TeamModes } from '../../football/teams/Team.js';
 import Ball from '../../football/entities/Ball.js';
 import Pitch from '../../football/entities/Pitch.js';
@@ -51,8 +51,6 @@ export default function createBallPossession() {
         direction: { x: -1, y: 0 }
     }));
     homePlayer.controller = new HumanController(homePlayer);
-    awayPlayer.controller = new Controller(awayPlayer);
-    awayPlayer.hasBall = true;
 
     const players = [homePlayer, awayPlayer];
     const teams = [homeTeam, awayTeam];
@@ -60,7 +58,9 @@ export default function createBallPossession() {
         awayPlayer.x + awayPlayer.direction.x * 12,
         awayPlayer.y + awayPlayer.direction.y * 12
     );
+    ball.setPossession(awayPlayer, players);
     ball.setCanAcquirePossession(true);
+    const kickController = new KickController(field);
     const pitch = new Pitch(field.x, field.y, field.width, field.height);
     const collisionSystem = new CollisionSystem();
     [...players, ball].forEach(entity => collisionSystem.register(entity));
@@ -71,12 +71,19 @@ export default function createBallPossession() {
         awayTeam,
         players,
         ball,
+        kickChargeTime: 0,
+        kickWasPressed: false,
         statusText: 'Ball possession collision test',
         tryAcquirePossession(player) {
-            ball.tryAcquirePossession(player, players);
+            if (ball.tryAcquirePossession(player, players)) {
+                this.onPossessionAcquired();
+            }
+        },
+        onPossessionAcquired() {
+            this.kickChargeTime = 0;
         },
         setPossession(player) {
-            //if (player.team === homeTeam) this.tryAcquirePossession(player);
+            if (player.team === homeTeam) ball.setPossession(player, players);
         },
         update(deltaTime, input) {
             const context = {
@@ -88,14 +95,31 @@ export default function createBallPossession() {
                 energyRecoveryPerSecond: 10
             };
             teams.forEach(team => team.update(deltaTime, context));
+            const holder = players.find(player => player.hasBall);
+            if (holder === homePlayer && input.kick) {
+                this.kickChargeTime = kickController.chargeHumanKick(
+                    homePlayer,
+                    this.kickChargeTime,
+                    deltaTime
+                );
+            } else if (holder === homePlayer && this.kickWasPressed) {
+                this.kickChargeTime = 0;
+                ball.setCanAcquirePossession(true);
+                homePlayer.kickBall(ball);
+                ball.recordKick(homePlayer);
+            }
+            this.kickWasPressed = input.kick;
             ball.update(deltaTime, players.find(player => player.hasBall), field);
             collisionSystem.update();
         }
     };
 
-    const collisionHandler = new FootballCollisionHandler(match);
+    const playerBallCollisionHandler = new PlayerBallCollisionHandler(
+        players,
+        () => match.onPossessionAcquired()
+    );
     collisionSystem.addCollisionListener((entityA, entityB) =>
-        collisionHandler.handle(entityA, entityB)
+        playerBallCollisionHandler.handle(entityA, entityB)
     );
 
     return {

@@ -3,6 +3,7 @@ const MAX_KICK_SPEED = 700;
 const MIN_KICK_SPEED = 220;
 
 export const KICK_CHARGE_DURATION = 0.5;
+export const GOALKEEPER_CLEARANCE_SPEED = 450;
 
 export default class KickController {
     constructor(field, { goalMouthAimFractions = [0.2, 0.8] } = {}) {

@@ -1,6 +1,9 @@
 import AiController from '../controllers/AiController.js';
 import HumanController from '../controllers/HumanController.js';
-import KickController, { KICK_CHARGE_DURATION } from './KickController.js';
+import KickController, {
+    GOALKEEPER_CLEARANCE_SPEED,
+    KICK_CHARGE_DURATION
+} from './KickController.js';
 import MatchRestartManager from './MatchRestartManager.js';
 import MatchStateManager, { MatchStates } from './MatchStateManager.js';
 import { TeamModes } from '../teams/Team.js';
@@ -10,8 +13,6 @@ export { MatchStates };
 const ENERGY_DRAIN_PER_SECOND = 40;
 const ENERGY_RECOVERY_PER_SECOND = 10;
 const GOAL_CELEBRATION_DURATION = 2;
-const GOALKEEPER_CLEARANCE_SPEED = 450;
-
 export default class MatchManager {
     constructor({
         field,
@@ -302,6 +303,10 @@ export default class MatchManager {
 
     tryAcquirePossession(player) {
         if (!this.ball.tryAcquirePossession(player, this.players)) return;
+        this.onPossessionAcquired(player);
+    }
+
+    onPossessionAcquired(player) {
         this.lastTouchTeam = player.team;
         this.kickChargeTime = 0;
         if (player.team === this.homeTeam) {

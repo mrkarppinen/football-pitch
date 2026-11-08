@@ -73,7 +73,7 @@ export default class Ball extends GameObject {
     }
 
     tryAcquirePossession(player, players) {
-        if (!this.canBeAcquiredBy(player)) return false;
+        if (player.hasBall || !this.canBeAcquiredBy(player)) return false;
 
         players.forEach(candidate => {
             candidate.hasBall = candidate === player;

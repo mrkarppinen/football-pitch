@@ -14,12 +14,6 @@ export default class FootballCollisionHandler {
                 return;
             }
 
-            const player = this.getEntity(entityA, entityB, GameObjectType.PLAYER);
-            if (player) {
-                this.match.tryAcquirePossession(player);
-                return;
-            }
-
             const goalPost = this.getEntity(entityA, entityB, GameObjectType.GOAL_POST);
             if (goalPost) {
                 ball.reflectFromPost(goalPost);
