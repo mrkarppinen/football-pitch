@@ -17,8 +17,9 @@ const TEAM_CONFIGS = [
             { id: 1, name: 'Player1', x: 20, y: 30, role: 'defence' },
             { id: 3, name: 'Player3', x: 20, y: 70, role: 'defence' },
             { id: 9, name: 'Player9', x: 20, y: 50, role: 'defence' },
-            { id: 88, name: 'Karppinen', x: 40, y: 40, role: 'attack', kickoff: true },
-            { id: 10, name: 'Player10', x: 35, y: 65, role: 'attack' }
+            { id: 10, name: 'Player10', x: 38, y: 35, role: 'midfield' },
+            { id: 13, name: 'Player13', x: 38, y: 65, role: 'midfield' },
+            { id: 88, name: 'Karppinen', x: 50, y: 50, role: 'attack', kickoff: true }
         ]
     },
     {
@@ -30,11 +31,12 @@ const TEAM_CONFIGS = [
         goalkeeperId: 8,
         goalkeeperGoalSide: 'right',
         roster: [
-            { id: 4, name: 'Player4', x: 80, y: 50, role: 'defence'},
+            { id: 4, name: 'Player4', x: 80, y: 50, role: 'defence' },
             { id: 5, name: 'Player5', x: 80, y: 30, role: 'defence' },
             { id: 6, name: 'Player6', x: 80, y: 70, role: 'defence' },
-            { id: 11, name: 'Player11', x: 60, y: 35, role: 'attack', kickoff: true },
-            { id: 12, name: 'Player12', x: 60, y: 65, role: 'attack' }
+            { id: 12, name: 'Player12', x: 62, y: 35, role: 'midfield' },
+            { id: 14, name: 'Player14', x: 62, y: 65, role: 'midfield' },
+            { id: 11, name: 'Player11', x: 50, y: 50, role: 'attack', kickoff: true }
         ]
     }
 ];

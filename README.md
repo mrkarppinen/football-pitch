@@ -32,7 +32,7 @@ Select **Shootout practice** below the pitch or open
 
 ## Teams
 
-Each `AreaDefendingTeam` extends `Team` with a defensive-area radius and assigns AI field players to chase the ball, support the play, or maintain a formation position. AI ball carriers attack the opposing goal. Each side has five field players and one goalkeeper, with three `defence` roles and two `attack` roles.
+Each `AreaDefendingTeam` extends `Team` with a defensive-area radius and assigns AI field players to chase the ball, support the play, or maintain a formation position. AI ball carriers attack the opposing goal. Each side has six field players and one goalkeeper: three defenders, two midfielders, and one attacker. Midfielders lead the press and support play; defenders keep their formation unless the ball enters their defensive third.
 
 ## Code organization
 

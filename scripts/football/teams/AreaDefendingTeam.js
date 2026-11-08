@@ -36,13 +36,15 @@ export default class AreaDefendingTeam extends Team {
         const aiPlayers = this.fieldPlayers.filter(player =>
             player.controller instanceof AiController
         );
-        const nearestPlayers = [...aiPlayers].sort((first, second) =>
-            this.distanceToBall(first, context.ball) - this.distanceToBall(second, context.ball)
+        const defending = holder?.team !== this;
+        const candidates = defending
+            ? this.getDefensiveChaserCandidates(aiPlayers, context)
+            : aiPlayers;
+        const chaser = defending ? this.getNearestToBall(candidates, context.ball) : null;
+        const supportCandidates = aiPlayers.filter(player =>
+            player !== chaser && player !== holder && player.role !== 'defence'
         );
-        const chaser = holder?.team === this ? null : nearestPlayers[0];
-        const support = nearestPlayers.find(player =>
-            player !== chaser && player !== holder
-        );
+        const support = this.getNearestToBall(supportCandidates, context.ball);
 
         for (const player of aiPlayers) {
             if (player === holder && holder.team === this) continue;
@@ -57,6 +59,30 @@ export default class AreaDefendingTeam extends Team {
         }
     }
 
+    getDefensiveChaserCandidates(aiPlayers, context) {
+        const midfielders = aiPlayers.filter(player => player.role === 'midfield');
+        const defenders = aiPlayers.filter(player => player.role === 'defence');
+        if (this.isBallInDefensiveThird(context.ball, context.field)) {
+            return [...midfielders, ...defenders];
+        }
+        return midfielders.length ? midfielders : aiPlayers;
+    }
+
+    isBallInDefensiveThird(ball, field) {
+        const defensiveThirdBoundary = this.attacksRight
+            ? field.x + field.width * 0.35
+            : field.x + field.width * 0.65;
+        return this.attacksRight
+            ? ball.x <= defensiveThirdBoundary
+            : ball.x >= defensiveThirdBoundary;
+    }
+
+    getNearestToBall(players, ball) {
+        return [...players].sort((first, second) =>
+            this.distanceToBall(first, ball) - this.distanceToBall(second, ball)
+        )[0] ?? null;
+    }
+
     distanceToBall(player, ball) {
         return Math.hypot(player.x - ball.x, player.y - ball.y);
     }
@@ -65,8 +91,11 @@ export default class AreaDefendingTeam extends Team {
         const attackDirection = this.attacksRight ? 1 : -1;
         const laneDirection = holder?.team === this ? attackDirection : -attackDirection;
         const verticalDirection = player.y < context.ball.y ? -1 : 1;
+        const forwardDistance = player.role === 'attack'
+            ? this.defendAreaRadius * 0.85
+            : this.defendAreaRadius * 0.55;
         return {
-            x: context.ball.x + laneDirection * this.defendAreaRadius * 0.55,
+            x: context.ball.x + laneDirection * forwardDistance,
             y: context.ball.y + verticalDirection * this.defendAreaRadius * 0.45
         };
     }
