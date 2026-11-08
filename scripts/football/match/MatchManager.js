@@ -346,9 +346,7 @@ export default class MatchManager {
     }
 
     attachBallTo(player) {
-        this.ball.x = player.x + player.direction.x * 12;
-        this.ball.y = player.y + player.direction.y * 12;
-        this.ball.previousPosition = { x: this.ball.x, y: this.ball.y };
+        this.ball.attachTo(player);
     }
 
     setHumanController(player) {

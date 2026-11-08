@@ -54,10 +54,7 @@ export default function createBallPossession() {
 
     const players = [homePlayer, awayPlayer];
     const teams = [homeTeam, awayTeam];
-    const ball = new Ball(
-        awayPlayer.x + awayPlayer.direction.x * 12,
-        awayPlayer.y + awayPlayer.direction.y * 12
-    );
+    const ball = new Ball(awayPlayer.x, awayPlayer.y);
     ball.setPossession(awayPlayer, players);
     ball.setCanAcquirePossession(true);
     const kickController = new KickController(field);

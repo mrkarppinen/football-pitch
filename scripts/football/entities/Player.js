@@ -16,7 +16,7 @@ export default class Player extends GameObject {
         kickoff = false,
         speed = 120,
         runningSpeed = 240,
-        radius = 10
+        radius = 7
     }) {
         super(x, y, radius, GameObjectType.PLAYER, [GameObjectType.PLAYER, GameObjectType.BALL]);
         this.id = id;
@@ -87,9 +87,7 @@ export default class Player extends GameObject {
 
     kickBall(ball) {
         const directionLength = Math.hypot(this.direction.x, this.direction.y) || 1;
-        ball.x = this.x + this.direction.x * 12;
-        ball.y = this.y + this.direction.y * 12;
-        ball.previousPosition = { x: ball.x, y: ball.y };
+        ball.attachTo(this);
         ball.velocity = {
             x: (this.direction.x / directionLength) * this.kickSpeed,
             y: (this.direction.y / directionLength) * this.kickSpeed

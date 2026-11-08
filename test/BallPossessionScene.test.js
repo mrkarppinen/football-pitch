@@ -18,6 +18,10 @@ match.update(1 / 60, {
 });
 assert.strictEqual(humanPlayer.hasBall, true);
 assert.strictEqual(awayPlayer.hasBall, false);
+assert.strictEqual(
+    Math.hypot(ball.x - humanPlayer.x, ball.y - humanPlayer.y),
+    humanPlayer.radius + ball.radius
+);
 
 awayPlayer.x += 100;
 awayPlayer.previousPosition = { x: awayPlayer.x, y: awayPlayer.y };

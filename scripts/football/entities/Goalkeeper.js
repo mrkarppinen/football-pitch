@@ -24,7 +24,7 @@ export default class Goalkeeper extends Player {
             y: centerY,
             direction: { x: goalSide === 'left' ? 1 : -1, y: 0 },
             speed,
-            radius: 10
+            radius: 6
         });
         this.isGoalkeeper = true;
         this.goalSide = goalSide;

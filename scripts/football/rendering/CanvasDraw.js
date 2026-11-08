@@ -143,7 +143,7 @@ export default class CanvasDraw {
         );
         ctx.stroke();
 
-        this.drawCircle(ctx, player.x, player.y, player.radius, true, 4, color);
+        this.drawCircle(ctx, player.x, player.y, player.radius, true, 2, color);
         ctx.font = '11px Arial, sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'bottom';

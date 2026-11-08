@@ -6,7 +6,7 @@ const PICKUP_GRACE_PERIOD = 0.35;
 const POSSESSION_GRACE_PERIOD = 2;
 
 export default class Ball extends GameObject {
-    constructor(x, y, { friction = 0.98, radius = 5, pickupRadius = 15 } = {}) {
+    constructor(x, y, { friction = 0.98, radius = 3, pickupRadius = 15 } = {}) {
         super(x, y, radius, GameObjectType.BALL, [
             GameObjectType.PLAYER,
             GameObjectType.GOAL_POST,
@@ -35,8 +35,7 @@ export default class Ball extends GameObject {
         this.previousPosition = { x: this.x, y: this.y };
 
         if (holder) {
-            this.x = holder.x + holder.direction.x * 12;
-            this.y = holder.y + holder.direction.y * 12;
+            this.attachTo(holder);
             this.velocity.x = 0;
             this.velocity.y = 0;
             return;
@@ -104,8 +103,10 @@ export default class Ball extends GameObject {
     }
 
     attachTo(player) {
-        this.x = player.x + player.direction.x * 12;
-        this.y = player.y + player.direction.y * 12;
+        const directionLength = Math.hypot(player.direction.x, player.direction.y) || 1;
+        const offset = player.radius + this.radius;
+        this.x = player.x + player.direction.x / directionLength * offset;
+        this.y = player.y + player.direction.y / directionLength * offset;
         this.previousPosition = { x: this.x, y: this.y };
     }
 

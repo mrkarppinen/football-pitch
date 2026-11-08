@@ -33,13 +33,13 @@ export default function createGame({
     const [homeTeam, awayTeam] = teams;
     const players = teams.flatMap(team => team.players);
 
+    const ball = new Ball(CANVAS_WIDTH / 2 - 12, CANVAS_HEIGHT / 2);
     const goalWidth = field.width * 7.32 / 105;
     const goalY = field.y + field.height / 2 - goalWidth / 2;
     const goals = [
-        new Goal(0, goalY, field.x, goalWidth, 5, 'left'),
-        new Goal(field.x + field.width, goalY, field.x, goalWidth, 5, 'right')
+        new Goal(0, goalY, field.x, goalWidth, ball.radius, 'left'),
+        new Goal(field.x + field.width, goalY, field.x, goalWidth, ball.radius, 'right')
     ];
-    const ball = new Ball(CANVAS_WIDTH / 2 - 12, CANVAS_HEIGHT / 2);
     const { goalPosts, sidelines, endlines } = createBoundaries(
         field,
         CANVAS_WIDTH,

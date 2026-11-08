@@ -50,6 +50,8 @@ The match clock defaults to 90 seconds and can be changed through `MATCH_DURATIO
 
 AI goalkeeper speed and goal-shot target heights are configured by `AI_GOALKEEPER_SPEED` and `GOAL_MOUTH_AIM_FRACTIONS` in the same settings module. Human kick charge duration is unchanged; while charging, a vertical bar appears behind the player and fills from bottom to top.
 
+Player, goalkeeper, and ball collision radii are smaller than their original defaults to open up more shooting space. Field players use a 7 px radius, goalkeepers 6 px, and the ball 3 px.
+
 The collision-test scene in `scripts/scenes/ball-possession/createBallPossession.js` has one human-controlled Home player and one Away player holding the ball. Move into the ball carrier to take possession, then hold and release Space to kick. Run `npm run build` and open [http://localhost:3000/testCollision.html](http://localhost:3000/testCollision.html) to try it.
 
 Run the kick, goalkeeper, and match timer regression tests with `npm test`.

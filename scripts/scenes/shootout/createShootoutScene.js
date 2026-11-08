@@ -64,7 +64,7 @@ export default function createShootoutScene() {
     goalkeeper.controller = new AiController(goalkeeper);
 
     const players = [shooter, goalkeeper];
-    const ball = new Ball(shooter.x + 12, shooter.y);
+    const ball = new Ball(shooter.x, shooter.y);
     ball.setPossession(shooter, players);
     ball.setCanAcquirePossession(false);
 

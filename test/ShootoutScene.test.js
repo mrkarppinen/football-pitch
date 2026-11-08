@@ -21,6 +21,13 @@ assert(shooter.controller instanceof HumanController);
 assert(goalkeeper instanceof Goalkeeper);
 assert(goalkeeper.controller instanceof AiController);
 assert.strictEqual(goalkeeper.speed, AI_GOALKEEPER_SPEED);
+assert.strictEqual(shooter.radius, 7);
+assert.strictEqual(goalkeeper.radius, 6);
+assert.strictEqual(scene.match.ball.radius, 3);
+assert.strictEqual(
+    Math.hypot(scene.match.ball.x - shooter.x, scene.match.ball.y - shooter.y),
+    shooter.radius + scene.match.ball.radius
+);
 
 const goalkeeperStartY = goalkeeper.y;
 shooter.y += 100;
@@ -44,6 +51,7 @@ assert.strictEqual(scene.match.ball.canAcquirePossession, false);
 scene.match.ball.x = goalkeeper.x;
 scene.match.ball.y = goalkeeper.y;
 scene.match.ball.previousPosition = { x: goalkeeper.x, y: goalkeeper.y };
+shooter.hasBall = false;
 scene.match.ball.setCanAcquirePossession(true);
 scene.match.update(0.016, neutralInput);
 assert.strictEqual(goalkeeper.hasBall, true);
